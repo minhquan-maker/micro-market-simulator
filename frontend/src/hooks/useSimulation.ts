@@ -12,6 +12,8 @@ interface UseSimulationOptions {
   }) => void;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
 export function useSimulation({ onTick, onComplete }: UseSimulationOptions = {}) {
   const [status, setStatus] = useState<"idle" | "connecting" | "running" | "complete" | "error">("idle");
   const [runId, setRunId] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export function useSimulation({ onTick, onComplete }: UseSimulationOptions = {})
       setError(null);
 
       try {
-        const res = await fetch("/api/simulate", {
+        const res = await fetch(`${API_BASE}/api/simulate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(config),
@@ -39,8 +41,10 @@ export function useSimulation({ onTick, onComplete }: UseSimulationOptions = {})
         setRunId(id);
         setStatus("running");
 
-        const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const ws = new WebSocket(`${proto}//${window.location.host}/ws/simulate/${id}`);
+        const wsBase = API_BASE.replace(/^http/, "ws");
+        const wsProto = wsBase.startsWith("wss") ? "wss:" : "ws:";
+        const wsHost = wsBase.replace(/^https?:\/\//, "").replace(/^wss?:\/\//, "");
+        const ws = new WebSocket(`${wsProto}//${wsHost}/ws/simulate/${id}`);
         wsRef.current = ws;
 
         ws.onmessage = (event) => {
