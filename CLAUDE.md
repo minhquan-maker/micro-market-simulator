@@ -5,8 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Local Python dev — the package lives under src/
+# ─── Python (simulation engine) ───────────────────────────
+# Local dev — always set PYTHONPATH to src/
 export PYTHONPATH=src
+
+pip install -e ".[dev]"
 
 # Run all tests
 python3 -m pytest tests/ -v
@@ -14,18 +17,27 @@ python3 -m pytest tests/ -v
 # Run a single test file
 python3 -m pytest tests/test_orderbook.py -v
 
-# Run with coverage
+# With coverage
 python3 -m pytest tests/ --cov=mini_jane_street --cov-report=term-missing
 
 # Lint & type check
 ruff check src/ tests/ scripts/
 mypy src/
 
-# Install dependencies (use editable install for dev)
-pip install -e ".[dev]"
-
-# Run simulation
+# CLI simulation
 python3 scripts/run_simulation.py --ticks 500 --seed 42 --output results/
+
+# ─── Frontend (React/Vite) ───────────────────────────────
+cd frontend
+npm install
+npm run dev          # dev server on :5173, proxies /api and /ws to :8000
+npm run build        # production build → dist/
+npm run preview      # preview the built dist/
+
+# ─── Backend (FastAPI) ────────────────────────────────────
+cd server
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
 ```
 
 ## Architecture
@@ -49,7 +61,11 @@ The `mini_jane_street` package lives in **two places**:
 - `src/mini_jane_street/` — for local dev and tests (run with `PYTHONPATH=src`)
 - `server/mini_jane_street/` — embedded copy for deployment (deploy targets `server/` only)
 
-Keep them in sync when modifying the package.
+**Sync after editing:** After modifying the package, copy to `server/`:
+```bash
+cp -r src/mini_jane_street/ server/mini_jane_street/
+```
+The `server/` copy is what Render/Vercel serve. The `src/` copy is what `PYTHONPATH=src` resolves.
 
 ## Package Imports
 
@@ -156,3 +172,21 @@ The simulation runs **fully in Python** (no Web Worker). Ticks are streamed one-
 ## Additional Docs
 
 `docs/` contains supplementary documentation: `architecture.md` (component diagram), `spec.md` (feature spec), `roadmap.md` (planned work), and `research.md` (market microstructure references).
+
+---
+
+## Deployment
+
+**Frontend → Vercel** (`vercel.com`)
+- Root Directory: `frontend`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- **Required env var:** `VITE_API_URL = https://micro-market-simulator.onrender.com` (set in Vercel dashboard → Environment Variables → Redeploy after setting)
+
+**Backend → Render** (`render.com`)
+- Root Directory: `server`
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- Free tier: spins down after 15 min idle (cold-start ~20s on first hit)
+
+Every push to `main` on GitHub auto-triggers a new deployment on both Vercel and Render. No manual steps needed.
