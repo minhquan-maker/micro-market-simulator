@@ -101,13 +101,29 @@ engine.analytics.export_trades_csv("trades.csv")
 # Terminal 1 — Backend (FastAPI)
 cd server
 pip install -r requirements.txt
-PYTHONPATH=../src uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 
 # Terminal 2 — Frontend (React + Vite)
 cd frontend && npm install && npm run dev
 ```
 
 Open `http://localhost:5173` — configure ticks, volatility, seed, and watch the simulation stream live over WebSocket.
+
+### Deploy (Vercel + Railway)
+
+**Railway (backend):**
+1. Create account at [railway.app](https://railway.app) — connect with GitHub
+2. New Project → Deploy from GitHub → select `micro-market-simulator`
+3. Settings → Root Directory: `server`
+4. Settings → Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+5. Deploy → copy the URL (e.g. `micro-market-simulator.railway.app`)
+
+**Vercel (frontend):**
+1. Create account at [vercel.com](https://vercel.com) — sign up with GitHub
+2. Add New Project → select `micro-market-simulator`
+3. Root Directory: `frontend` | Build Command: `npm run build` | Output: `dist`
+4. Deploy → Settings → Environment Variables → add `VITE_API_URL = https://YOUR-RAILWAY-URL.railway.app`
+5. Redeploy → live at `https://micro-market-simulator.vercel.app`
 
 ---
 

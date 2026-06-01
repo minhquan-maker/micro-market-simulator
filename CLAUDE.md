@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# ALWAYS set PYTHONPATH — the package lives under src/
+# Local Python dev — the package lives under src/
 export PYTHONPATH=src
 
 # Run all tests
@@ -42,6 +42,14 @@ SimulationEngine
   └─ market_maker (MarketMaker — inventory-adjusted quotes)
        └─ Analytics (consumes Fill events)
 ```
+
+## Package Layout
+
+The `mini_jane_street` package lives in **two places**:
+- `src/mini_jane_street/` — for local dev and tests (run with `PYTHONPATH=src`)
+- `server/mini_jane_street/` — embedded copy for Railway deployment (Railway deploys only `server/`)
+
+Keep them in sync when modifying the package.
 
 ## Package Imports
 
