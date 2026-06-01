@@ -47,7 +47,7 @@ SimulationEngine
 
 The `mini_jane_street` package lives in **two places**:
 - `src/mini_jane_street/` — for local dev and tests (run with `PYTHONPATH=src`)
-- `server/mini_jane_street/` — embedded copy for Railway deployment (Railway deploys only `server/`)
+- `server/mini_jane_street/` — embedded copy for deployment (deploy targets `server/` only)
 
 Keep them in sync when modifying the package.
 
@@ -106,7 +106,7 @@ from mini_jane_street import (
 # Terminal 1 — backend (FastAPI)
 cd server
 pip install -r requirements.txt
-PYTHONPATH=../src uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 
 # Terminal 2 — frontend (React/Vite)
 cd frontend
