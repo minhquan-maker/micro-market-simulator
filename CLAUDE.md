@@ -24,12 +24,15 @@ python3 -m ruff check src/ tests/ scripts/
 # CLI simulation
 python3 scripts/run_simulation.py --ticks 500 --seed 42 --output results/
 
-# ─── Frontend (React/Vite) ───────────────────────────────
+# ─── Frontend (React/Vite + Tailwind) ─────────────────
 cd frontend
 npm install
 npm run dev          # dev server on :5173; Vite proxies /api and /ws → localhost:8000
-npm run build        # production build → dist/
+npm run build        # tsc -b && vite build → dist/ (includes TypeScript check)
 npm run preview      # preview the built dist/
+
+# Tailwind is scoped to landing page only. Simulation app keeps vanilla CSS.
+# Do NOT use Tailwind classes in simulation components (App.tsx, ConfigPanel, etc.)
 
 # ─── Backend (FastAPI) ────────────────────────────────────
 cd server
@@ -78,6 +81,10 @@ The `mini_jane_street` package lives in **two places**:
 cp -r src/mini_jane_street/ server/mini_jane_street/
 ```
 The `server/` copy is what Render serves. The `src/` copy is what `PYTHONPATH=src` resolves. **Always sync after editing.**
+
+**Frontend styles:**
+- Landing page: Tailwind CSS v3.4 (`tailwind.config.js`, `postcss.config.js`) — **do not use Tailwind classes in simulation components**
+- Simulation app: vanilla CSS in `index.css` + CSS custom properties (dark/light themes)
 
 ## Server Files
 
@@ -159,6 +166,7 @@ POST /api/simulate/{run_id}/step  → triggers one tick in step mode
 POST /api/simulate/{run_id}/speed  { delay_ms }  → updates tick delay
 WS   /ws/simulate/{run_id}   → streams tick messages
 ```
+Landing page at `/`. Simulation at `/simulate`. `vercel.json` rewrites all paths to `index.html` for SPA routing.
 
 ### WebSocket messages
 | Type | Direction | Description |
@@ -192,24 +200,28 @@ Frontend types are in `frontend/src/types.ts`. Key types:
 ### Frontend Structure
 ```
 frontend/src/
-├── App.tsx            # Main component orchestrating all panels
-├── types.ts          # TypeScript types for WebSocket messages
-├── main.tsx          # Entry: StrictMode > ErrorBoundary > ThemeProvider > App
-├── index.css         # Global styles — dark/light CSS variable themes
+├── App.tsx               # Router shell: BrowserRouter → / (LandingPage) | /simulate (SimulationApp)
+├── pages/
+│   ├── LandingPage.tsx  # Route: / — Tailwind-styled landing (Hero + About + Agents + CTA)
+│   └── SimulationApp.tsx # Route: /simulate — original simulation dashboard
+├── types.ts             # TypeScript types for WebSocket messages
+├── main.tsx             # Entry: StrictMode > ErrorBoundary > ThemeProvider > App
+├── index.css            # @tailwind directives + simulation vanilla CSS (dark/light CSS vars)
 ├── hooks/
-│   └── useSimulation.ts   # WS + REST hook: start, stop, step, setSpeed
+│   └── useSimulation.ts      # WS + REST hook: start, stop, step, setSpeed
 ├── contexts/
-│   └── ThemeContext.tsx   # Dark/light theme with localStorage persistence
+│   └── ThemeContext.tsx     # Dark/light theme with localStorage persistence
 └── components/
-    ├── ConfigPanel.tsx    # Simulation config form
-    ├── OrderBook.tsx     # Live bid/ask depth display
-    ├── PriceChart.tsx   # Line chart of mid price (recharts)
-    ├── TradeTape.tsx    # Scrolling recent trades list
-    ├── PnLDashboard.tsx  # Per-agent realized/unrealized PnL + positions
-    └── ErrorBoundary.tsx
+    ├── ConfigPanel.tsx      # Simulation config form
+    ├── OrderBook.tsx        # Live bid/ask depth display
+    ├── PriceChart.tsx       # Line chart of mid price (recharts)
+    ├── TradeTape.tsx        # Scrolling recent trades list
+    ├── PnLDashboard.tsx     # Per-agent realized/unrealized PnL + positions
+    ├── ErrorBoundary.tsx
+    └── landing/             # Tailwind-styled components (Nav, Hero, About, Agents, CTA)
 ```
 
-Tech stack: React 18 + TypeScript + Vite + Recharts. Single-page app (no router). Dark/light theme via CSS custom properties.
+Tech stack: React 18 + TypeScript + Vite + Recharts + Tailwind CSS v3.4 (landing only). SPA routing via react-router-dom v7. Dark/light theme via CSS custom properties.
 
 ## Deployment
 
@@ -218,6 +230,7 @@ Tech stack: React 18 + TypeScript + Vite + Recharts. Single-page app (no router)
 - Build: `npm run build`
 - Output: `dist`
 - Env var: `VITE_API_URL = https://micro-market-backend.onrender.com`
+- `vercel.json` has `rewrites` — required for `/simulate` SPA route to work
 
 **Backend → Render**
 - Root Directory: `server`
