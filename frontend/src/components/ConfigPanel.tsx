@@ -3,6 +3,8 @@ interface SimConfig {
   volatility: number;
   seed: number | null;
   initial_price: number;
+  tick_delay_ms?: number;
+  step_mode?: boolean;
 }
 
 interface Props {
@@ -12,7 +14,15 @@ interface Props {
   onStart: () => void;
   onStop: () => void;
   error: string | null;
+  onStep?: () => void;
 }
+
+const SPEED_OPTIONS = [
+  { label: "Fast (10ms)", value: 10 },
+  { label: "Normal (50ms)", value: 50 },
+  { label: "Slow (200ms)", value: 200 },
+  { label: "Very Slow (1s)", value: 1000 },
+];
 
 export default function ConfigPanel({
   config,
@@ -21,6 +31,7 @@ export default function ConfigPanel({
   onStart,
   onStop,
   error,
+  onStep,
 }: Props) {
   const isRunning = status === "running" || status === "connecting";
 
@@ -97,6 +108,39 @@ export default function ConfigPanel({
           />
         </div>
 
+        {/* Phase 3.4: Speed control */}
+        <div className="form-group">
+          <label className="form-label">Speed</label>
+          <select
+            className="form-input"
+            value={config.tick_delay_ms ?? 10}
+            disabled={isRunning}
+            onChange={(e) =>
+              setConfig({ ...config, tick_delay_ms: parseInt(e.target.value) })
+            }
+          >
+            {SPEED_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Phase 3.4: Step mode */}
+        <div className="form-group">
+          <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", textTransform: "none", fontSize: 12 }}>
+            <input
+              type="checkbox"
+              checked={config.step_mode ?? false}
+              disabled={isRunning}
+              onChange={(e) => setConfig({ ...config, step_mode: e.target.checked })}
+              style={{ accentColor: "var(--blue)" }}
+            />
+            Step Mode
+          </label>
+        </div>
+
         {error && (
           <div style={{ color: "var(--red)", fontSize: 12, padding: "8px", background: "var(--red-bg)", borderRadius: 6, border: "1px solid var(--red-dim)" }}>
             {error}
@@ -108,8 +152,19 @@ export default function ConfigPanel({
           style={{ width: "100%", marginTop: 4 }}
           onClick={isRunning ? onStop : onStart}
         >
-          {isRunning ? "■ Stop Simulation" : "▶ Start Simulation"}
+          {isRunning ? "■ Stop" : "▶ Start Simulation"}
         </button>
+
+        {/* Phase 3.4: Step button when in step mode */}
+        {isRunning && (config.step_mode ?? false) && (
+          <button
+            className="btn btn-secondary"
+            style={{ width: "100%", marginTop: 4 }}
+            onClick={onStep}
+          >
+            ▶ Step
+          </button>
+        )}
       </div>
 
       <div>

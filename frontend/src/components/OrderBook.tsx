@@ -1,16 +1,20 @@
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import type { TickMsg } from "../types";
 
 interface Props {
   tick: TickMsg;
+  spreadHistory?: number[];
 }
 
-export default function OrderBook({ tick }: Props) {
+export default function OrderBook({ tick, spreadHistory = [] }: Props) {
   const { bid_depth, ask_depth, best_bid, best_ask } = tick;
 
   const maxBidQty = Math.max(...bid_depth.map(([, q]) => q), 1);
   const maxAskQty = Math.max(...ask_depth.map(([, q]) => q), 1);
 
   const spread = best_ask > 0 && best_bid > 0 ? Math.max(0, best_ask - best_bid) : null;
+
+  const spreadData = spreadHistory.map((value, index) => ({ index, value }));
 
   return (
     <div className="order-book-content">
@@ -64,6 +68,28 @@ export default function OrderBook({ tick }: Props) {
             </div>
           );
         })}
+
+        {/* Phase 1.0b: Spread histogram */}
+        {spreadHistory.length > 1 && (
+          <div className="spread-histogram">
+            <div className="spread-histogram-title">Spread History</div>
+            <div className="spread-histogram-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={spreadData} margin={{ top: 2, right: 4, left: -28, bottom: 0 }}>
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="var(--yellow)"
+                    fill="rgba(234, 179, 8, 0.15)"
+                    strokeWidth={1}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

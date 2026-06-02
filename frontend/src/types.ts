@@ -10,6 +10,7 @@ export interface TickMsg {
   bid_depth: [number, number][];
   ask_depth: [number, number][];
   trades: Trade[];
+  positions: AgentPosition[];  // Phase 3.1
 }
 
 export interface StartMsg {
@@ -24,8 +25,26 @@ export interface CompleteMsg {
   total_trades: number;
   mm_pnl: number;
   mm_position: number;
+  mm_unrealized: number;  // Phase 3.2
   trader_pnl: TraderPnL[];
+  analytics: Record<string, AnalyticsMetrics>;  // Phase 3.2
   run_id: string;
+}
+
+export interface AgentPosition {  // Phase 3.1
+  id: string;
+  position: number;
+  realized: number;
+  unrealized: number;
+}
+
+export interface AnalyticsMetrics {  // Phase 3.2
+  sharpe_ratio: number;
+  max_drawdown: number;
+  win_rate: number;
+  profit_factor: number;
+  avg_trade_pnl: number;
+  total_pnl: number;
 }
 
 export interface ErrorMsg {

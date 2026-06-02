@@ -56,6 +56,30 @@ async def get_simulation(run_id: str) -> Dict[str, Any]:
     }
 
 
+# Phase 3.4: step mode + speed control
+@app.post("/api/simulate/{run_id}/step")
+async def step_simulation(run_id: str) -> Dict[str, Any]:
+    """Trigger one tick in step mode."""
+    run = manager.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if not run.step_mode:
+        raise HTTPException(status_code=400, detail="Simulation not in step mode")
+    triggered = manager.trigger_step(run_id)
+    return {"triggered": triggered}
+
+
+@app.post("/api/simulate/{run_id}/speed")
+async def set_speed(run_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
+    """Update tick delay (delay_ms) for a running simulation."""
+    run = manager.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    delay_ms = int(body.get("delay_ms", 10))
+    updated = manager.set_speed(run_id, delay_ms)
+    return {"updated": updated, "delay_ms": delay_ms}
+
+
 # ---------------------------------------------------------------------------
 # WebSocket — stream simulation ticks
 # ---------------------------------------------------------------------------

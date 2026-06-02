@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -13,6 +14,8 @@ class SimulationRequest:
     volatility: float = 0.5
     seed: Optional[int] = 42
     initial_price: float = 100.0
+    tick_delay_ms: int = 10   # Phase 3.4: speed control
+    step_mode: bool = False   # Phase 3.4: step-by-step mode
 
 
 @dataclass
@@ -22,6 +25,9 @@ class SimulationRun:
     status: str = "pending"  # pending | running | complete | error
     created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     result: Optional[Dict[str, Any]] = None
+    # Phase 3.4: step control
+    step_event: asyncio.Event = field(default_factory=asyncio.Event)
+    step_mode: bool = False
 
 
 @dataclass
@@ -36,6 +42,7 @@ class TickMessage:
     bid_depth: List[Tuple[float, int]]
     ask_depth: List[Tuple[float, int]]
     trades: List[Dict[str, Any]] = field(default_factory=list)
+    positions: List[Dict[str, Any]] = field(default_factory=list)  # Phase 3.1
     type: str = "tick"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -51,6 +58,7 @@ class TickMessage:
             "bid_depth": [[float(p), int(q)] for p, q in self.bid_depth],
             "ask_depth": [[float(p), int(q)] for p, q in self.ask_depth],
             "trades": self.trades,
+            "positions": self.positions,
         }
 
 
@@ -60,8 +68,10 @@ class CompleteMessage:
     total_trades: int
     mm_pnl: float
     mm_position: int
-    trader_pnl: List[Dict[str, Any]]
-    run_id: str
+    mm_unrealized: float = 0.0  # Phase 3.2
+    trader_pnl: List[Dict[str, Any]] = field(default_factory=list)
+    analytics: Dict[str, Any] = field(default_factory=dict)  # Phase 3.2
+    run_id: str = ""
     type: str = "complete"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -71,6 +81,8 @@ class CompleteMessage:
             "total_trades": self.total_trades,
             "mm_pnl": self.mm_pnl,
             "mm_position": self.mm_position,
+            "mm_unrealized": self.mm_unrealized,
             "trader_pnl": self.trader_pnl,
+            "analytics": self.analytics,
             "run_id": self.run_id,
         }

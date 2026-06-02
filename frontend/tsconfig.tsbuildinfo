@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/configpanel.tsx","./src/components/errorboundary.tsx","./src/components/orderbook.tsx","./src/components/pnldashboard.tsx","./src/components/pricechart.tsx","./src/components/tradetape.tsx","./src/contexts/themecontext.tsx","./src/hooks/usesimulation.ts"],"version":"5.9.3"}

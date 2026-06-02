@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+import os
+import sys
+from pathlib import Path
+
+# Resolve server/ directory for API tests
+_SERVER_DIR = Path(__file__).parent.parent / "server"
+if str(_SERVER_DIR) not in sys.path:
+    sys.path.insert(0, str(_SERVER_DIR))
+
 import pytest
 from decimal import Decimal
 

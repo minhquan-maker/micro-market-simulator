@@ -35,52 +35,52 @@ export default function PriceChart({ data, initialPrice }: Props) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
         <XAxis
           dataKey="tick"
-          stroke="#64748b"
+          stroke="var(--chart-axis)"
           fontSize={10}
           tickLine={false}
           axisLine={false}
-          tick={{ fill: "#64748b", fontSize: 10 }}
+          tick={{ fill: "var(--chart-axis)", fontSize: 10 }}
           interval="preserveStartEnd"
         />
         <YAxis
           domain={[minPrice - padding, maxPrice + padding]}
-          stroke="#64748b"
+          stroke="var(--chart-axis)"
           fontSize={10}
           tickLine={false}
           axisLine={false}
-          tick={{ fill: "#64748b", fontSize: 10 }}
+          tick={{ fill: "var(--chart-axis)", fontSize: 10 }}
           tickFormatter={(v: number) => v.toFixed(1)}
           width={48}
         />
         <Tooltip
           contentStyle={{
-            background: "#1a2235",
-            border: "1px solid #1e2d45",
+            background: "var(--chart-tooltip-bg)",
+            border: "1px solid var(--chart-tooltip-border)",
             borderRadius: 6,
             fontSize: 11,
             fontFamily: "JetBrains Mono, monospace",
-            color: "#e2e8f0",
+            color: "var(--chart-tooltip-text)",
           }}
-          labelStyle={{ color: "#64748b" }}
+          labelStyle={{ color: "var(--chart-axis)" }}
           formatter={(value: number) => [value.toFixed(3), "Price"]}
           labelFormatter={(label: number) => `Tick ${label}`}
         />
         <ReferenceLine
           y={initialPrice}
-          stroke="#3b82f6"
+          stroke="var(--chart-reference)"
           strokeDasharray="4 4"
           strokeOpacity={0.5}
         />
         <Line
           type="monotone"
           dataKey="price"
-          stroke="#22c55e"
+          stroke="var(--chart-line)"
           strokeWidth={1.5}
           dot={false}
-          activeDot={{ r: 4, fill: "#22c55e", stroke: "#0a0e17", strokeWidth: 2 }}
+          activeDot={{ r: 4, fill: "var(--chart-active-dot-fill)", stroke: "var(--chart-active-dot-stroke)", strokeWidth: 2 }}
           isAnimationActive={false}
         />
       </LineChart>
