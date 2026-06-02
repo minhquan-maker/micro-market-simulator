@@ -51,14 +51,14 @@ SimulationEngine
   │    ├─ _open_orders (resting orders by ID, pruned after each step)
   │    └─ _trader_order_ids (persistent per-trader order ID registry)
   ├─ traders[] (RandomTaker, MomentumTrader, MeanReversionTrader)
-  └─ market_maker (MarketMaker — inventory-adjusted quotes)
-       └─ Analytics (consumes Fill events)
+  ├─ market_maker (MarketMaker — inventory-adjusted quotes)
+  └─ analytics (Analytics — read-only consumer of fill log)
 
 Other dirs:
   scripts/         — CLI entry point (run_simulation.py)
   notebooks/       — Jupyter notebook for post-simulation analysis
   outputs/         — Sample simulation output (config, report, trades)
-  tests/           — 98 tests: conftest.py + test_*.py for each module
+  tests/           — 108 tests: conftest.py + test_*.py for each module
 ```
 
 ### Simulation Step Order (per tick)
@@ -69,6 +69,30 @@ Other dirs:
 4. `MarketMaker.on_market_data()` — MM posts quotes
 5. `Trader.on_market_data()` — each bot decides
 6. Fill routing — Exchange emits trades → routed to the appropriate agent
+
+## API Request/Response
+
+```python
+# SimulationRequest fields (server/models.py)
+SimulationRequest(
+    num_ticks=200,
+    volatility=0.5,
+    seed=42,
+    initial_price=100.0,
+    tick_delay_ms=10,
+    step_mode=False,
+    enabled_agents=["mm-1", "rt-1", "rt-2", "mom-1", "mr-1"],  # which agents run
+    difficulty=None,  # "beginner" | "intermediate" | "advanced"
+)
+```
+
+**Difficulty presets** (override volatility + tick_delay when set):
+
+| Preset | Volatility | Delay |
+|--------|-----------|-------|
+| beginner | 0.2 | 200ms |
+| intermediate | 0.5 | 50ms |
+| advanced | 1.5 | 10ms |
 
 ## Package Layout
 
@@ -160,13 +184,18 @@ cd frontend && npm run dev   # proxies /api and /ws to :8000
 
 ### API
 ```
-POST /api/simulate  { num_ticks, volatility, seed, initial_price, step_mode }  → { run_id }
-GET  /api/simulate/{run_id}  → { status, result }
-POST /api/simulate/{run_id}/step  → triggers one tick in step mode
+POST /api/simulate            { config }        → { run_id }
+GET  /api/simulate/{run_id}                       → { status, result }
+DELETE /api/simulate/{run_id}                     → cancels simulation
+POST /api/simulate/{run_id}/step                  → triggers one tick in step mode
 POST /api/simulate/{run_id}/speed  { delay_ms }  → updates tick delay
-WS   /ws/simulate/{run_id}   → streams tick messages
+GET  /api/health                                   → health check
+POST /api/ai/analyze  { prompt }                  → Groq LLM analysis (server-side key)
+WS   /ws/simulate/{run_id}                        → streams tick messages
 ```
 Landing page at `/`. Simulation at `/simulate`. `vercel.json` rewrites all paths to `index.html` for SPA routing.
+
+**`POST /api/ai/analyze`** proxies to Groq `llama-3.3-70b-versatile`. The API key lives in `server/.env` as `GROQ_API_KEY` — never exposed to the frontend.
 
 ### WebSocket messages
 | Type | Direction | Description |
@@ -200,28 +229,37 @@ Frontend types are in `frontend/src/types.ts`. Key types:
 ### Frontend Structure
 ```
 frontend/src/
-├── App.tsx               # Router shell: BrowserRouter → / (LandingPage) | /simulate (SimulationApp)
-├── pages/
-│   ├── LandingPage.tsx  # Route: / — Tailwind-styled landing (Hero + About + Agents + CTA)
-│   └── SimulationApp.tsx # Route: /simulate — original simulation dashboard
-├── types.ts             # TypeScript types for WebSocket messages
-├── main.tsx             # Entry: StrictMode > ErrorBoundary > ThemeProvider > App
-├── index.css            # @tailwind directives + simulation vanilla CSS (dark/light CSS vars)
+├── App.tsx                    # Router shell: BrowserRouter → / (LandingPage) | /simulate (SimulationApp)
+├── main.tsx                   # Entry: StrictMode > ErrorBoundary > ThemeProvider > LondonClockProvider > App
+├── types.ts                   # TypeScript types for WebSocket messages (TickMsg, CompleteMsg, Trade, etc.)
+├── index.css                  # @tailwind directives + ALL simulation vanilla CSS (~870 lines, dark/light vars)
 ├── hooks/
-│   └── useSimulation.ts      # WS + REST hook: start, stop, step, setSpeed
+│   └── useSimulation.ts       # WS + REST hook: start, stop, step, setSpeed, with ref-pattern for stale closures
 ├── contexts/
-│   └── ThemeContext.tsx     # Dark/light theme with localStorage persistence
+│   ├── ThemeContext.tsx       # Dark/light theme via CSS custom properties + localStorage
+│   └── LondonClockContext.tsx # Single live London time instance shared between Nav desktop/mobile menus
+├── services/
+│   └── groqService.ts         # POST /api/ai/analyze — throws on non-2xx
+├── pages/
+│   ├── LandingPage.tsx        # Route / — Tailwind-styled: Nav + Hero + About + HowItWorks + Agents + CTA + Contact
+│   └── SimulationApp.tsx      # Route /simulate — full dashboard: stats bar, order book, chart, config, PnL
 └── components/
-    ├── ConfigPanel.tsx      # Simulation config form
-    ├── OrderBook.tsx        # Live bid/ask depth display
-    ├── PriceChart.tsx       # Line chart of mid price (recharts)
-    ├── TradeTape.tsx        # Scrolling recent trades list
-    ├── PnLDashboard.tsx     # Per-agent realized/unrealized PnL + positions
-    ├── ErrorBoundary.tsx
-    └── landing/             # Tailwind-styled components (Nav, Hero, About, Agents, CTA)
+    ├── ConfigPanel.tsx        # Difficulty presets, agent toggles, speed, step mode
+    ├── OrderBook.tsx          # Live bid/ask depth with cumulative bars + spread histogram
+    ├── PriceChart.tsx         # Recharts LineChart with initial price reference line
+    ├── TradeTape.tsx          # Auto-scrolling trade list (last 100)
+    ├── PnLDashboard.tsx       # Per-agent P&L cards + live positions + analytics metrics
+    ├── EducationalSidebar.tsx # Live explanations: spread, momentum, OBI, MM inventory (visible during run)
+    ├── AiAnalyst.tsx          # "Ask AI" button → /api/ai/analyze → Groq analysis (orange accent card)
+    ├── ErrorBoundary.tsx      # Class-based React error boundary
+    └── landing/               # Tailwind-styled components: Nav, Hero, About, HowItWorks, Agents, CTA, Contact
 ```
 
-Tech stack: React 18 + TypeScript + Vite + Recharts + Tailwind CSS v3.4 (landing only). SPA routing via react-router-dom v7. Dark/light theme via CSS custom properties.
+**Entry hierarchy:** `main.tsx` wraps `LondonClockProvider` around `App`. The `LondonClockContext` shares a single timer between the desktop nav and mobile hamburger menu — prevents duplicate timers.
+
+**Vite proxy** (`vite.config.ts`): `/api` and `/ws` proxied to `localhost:8000` in dev only. In production, `VITE_API_URL` (set in Vercel env) points to Render.
+
+Tech stack: React 18 + TypeScript + Vite + Recharts + react-router-dom v7 + Tailwind CSS v3.4 (landing only). Simulation app uses vanilla CSS + CSS custom properties.
 
 ## Deployment
 
