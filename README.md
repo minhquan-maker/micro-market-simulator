@@ -2,15 +2,17 @@
 
 > An interactive market microstructure simulator — watch price form in real-time as 5 trading agents interact through a limit order book.
 
-[Live Demo](https://micro-market-simulator.vercel.app) · [Architecture](#architecture) · [Quick Start](#quick-start) · [5 Agents](#5-trading-agents) · [Concepts](#concepts-to-learn)
+[Live Demo](https://micro-market-simulator.vercel.app) · [Landing Page](#landing-page) · [Quick Start](#quick-start) · [5 Agents](#5-trading-agents) · [Architecture](#architecture) · [Concepts](#concepts-to-learn)
 
 ---
 
 ## What is this?
 
-**Mini Jane Street Simulator** mô phỏng **cấu trúc vi mô thị trường** (market microstructure) — cách giá hình thành khi các lệnh mua/bán tương tác với nhau theo quy tắc **ưu tiên giá-thời gian (FIFO)**.
+**Mini Market Simulator** is an educational platform for understanding **market microstructure** — how prices form when buy and sell orders interact through a **limit order book** with FIFO (price-time) priority.
 
-Nói đơn giản: thay vì một "black box" giá, bạn thấy trực tiếp **order book**, **matching engine**, và **5 trading agents** đang tương tác với nhau tick-by-tick.
+Rather than treating price as a black box, you see directly: the order book, the matching engine, and five trading agents competing tick-by-tick.
+
+The platform opens with a professional landing page introducing market microstructure concepts and the five agents. The simulation itself runs at `/simulate` (or the "Launch Simulator" button on the landing page).
 
 ## What you'll see
 
@@ -107,7 +109,7 @@ uvicorn main:app --reload --port 8000
 cd frontend && npm install && npm run dev
 ```
 
-Open `http://localhost:5173` — configure ticks, volatility, seed, and watch the simulation stream live over WebSocket.
+Open `http://localhost:5173` — you land on the introduction page. Click **"Launch Simulator"** to start the simulation, or go directly to `http://localhost:5173/simulate`. Configure ticks, volatility, seed, and watch the simulation stream live over WebSocket.
 
 ### Deploy (Vercel + Render)
 
@@ -187,6 +189,16 @@ Open `http://localhost:5173` — configure ticks, volatility, seed, and watch th
 | `market_maker.py` | Inventory-adjusted MM quoting, fill routing, realized PnL tracking |
 | `analytics.py` | Sharpe, max drawdown, win rate, profit factor — CSV/JSON export |
 | `config.py` | `SimulationConfig`, `SimulationResult` (breaks circular imports) |
+
+### Frontend Structure
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/` | `LandingPage` | Landing page: hero + about + 5 agents + CTA |
+| `/simulate` | `SimulationApp` | Full simulation dashboard |
+
+- **Landing page** — React 18 + Tailwind CSS v3.4, responsive, dark/light via CSS vars
+- **Simulation** — original app via vanilla CSS, WebSocket streaming, Recharts
 
 ---
 

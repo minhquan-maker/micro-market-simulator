@@ -27,7 +27,7 @@ python3 scripts/run_simulation.py --ticks 500 --seed 42 --output results/
 # ─── Frontend (React/Vite) ───────────────────────────────
 cd frontend
 npm install
-npm run dev          # dev server on :5173, proxies /api and /ws to :8000
+npm run dev          # dev server on :5173; Vite proxies /api and /ws → localhost:8000
 npm run build        # production build → dist/
 npm run preview      # preview the built dist/
 
@@ -50,6 +50,12 @@ SimulationEngine
   ├─ traders[] (RandomTaker, MomentumTrader, MeanReversionTrader)
   └─ market_maker (MarketMaker — inventory-adjusted quotes)
        └─ Analytics (consumes Fill events)
+
+Other dirs:
+  scripts/         — CLI entry point (run_simulation.py)
+  notebooks/       — Jupyter notebook for post-simulation analysis
+  outputs/         — Sample simulation output (config, report, trades)
+  tests/           — 98 tests: conftest.py + test_*.py for each module
 ```
 
 ### Simulation Step Order (per tick)
@@ -67,11 +73,17 @@ The `mini_jane_street` package lives in **two places**:
 - `src/mini_jane_street/` — for local dev and tests (resolved via `PYTHONPATH=src`)
 - `server/mini_jane_street/` — embedded copy for deployment (Render targets `server/` only)
 
-**Sync after editing the package:**
+**Sync after editing the Python package (always do this before committing):**
 ```bash
 cp -r src/mini_jane_street/ server/mini_jane_street/
 ```
 The `server/` copy is what Render serves. The `src/` copy is what `PYTHONPATH=src` resolves. **Always sync after editing.**
+
+## Server Files
+
+- `server/main.py` — FastAPI app (REST + WebSocket endpoints)
+- `server/manager.py` — `SimulationManager` orchestrates async simulation runs; routes ticks over `asyncio.Queue` → WebSocket
+- `server/models.py` — Pydantic-free dataclasses: `SimulationRequest`, `SimulationRun`, `TickMessage`, `CompleteMessage`
 
 ## Package Imports
 
@@ -88,11 +100,13 @@ All public types are re-exported from `src/mini_jane_street/__init__.py`.
 ## Key Design Decisions
 
 - **`Decimal` everywhere** for prices — no floats in financial calculations
+- **`PRICE_PRECISION = Decimal("0.01")`** in `entities.py` — single constant for tick size and rounding
 - **Frozen dataclasses** for `Order`, `Fill`, `MarketData`; mutable for `Exchange`, `OrderBook`, `SimulationEngine`
 - **`SortedDict` ascending** for both bid and ask books — best bid is `next(reversed(bid_book))`, best ask is `next(iter(ask_book))`. Do NOT use `reverse=True`
 - **OrderBook owns matching** — `add_order()` returns fills directly; no separate mutable state path
 - **`MatchingEngine`** in `matching_engine.py` is a reference/test implementation, not used at runtime
 - **`SimulationConfig` in `config.py`** — extracted from analytics to break circular imports
+- **100-tick rolling window** for MomentumTrader and MeanReversionTrader indicators
 
 ## Critical Gotchas
 
@@ -111,6 +125,16 @@ All public types are re-exported from `src/mini_jane_street/__init__.py`.
 
 ### Avg Cost Division
 - Use `Decimal(self.position)` not `Decimal / Decimal` — avoids context precision issues
+
+### Lessons Learned
+- **Avoid duplicate mutable references** — storing orders in both `_open_orders` and `PriceLevel.orders` caused stale references on partial fills. Single source of truth: the deque.
+- **Circular imports are a design smell** — `analytics` and `simulation` both imported `SimulationConfig`. Fix: extract to `config.py`.
+- **Test the bug, not just the happy path** — a specific test caught "order rests but status is FILLED" that happy-path tests missed.
+
+### Type Checking
+```bash
+python3 -m mypy src/mini_jane_street/ --python-version 3.12
+```
 
 ### Partial Fills in OrderBook
 - `popleft()` → reconstruct with `filled_qty += consumed` → `appendleft()` preserves FIFO (rejoins ahead of newer orders at same level)
@@ -159,11 +183,33 @@ Simulation runs fully in Python. Ticks are streamed one-by-one over WebSocket.
 `tick_delay_ms` controls the sleep between ticks (default from `SimulationRequest`, overridable via `/speed`).
 
 ### Frontend types
-Frontend types are in `frontend/src/types.ts` (not a directory). Key types:
+Frontend types are in `frontend/src/types.ts`. Key types:
 - `TickMsg` — every tick payload with order book + trades + per-agent positions
 - `CompleteMsg` — final analytics with `TraderPnL[]` and `AnalyticsMetrics`
 - `Trade` — `{ price, quantity, side, counterparty, timestamp }`
 - `AgentPosition` — `{ id, position, realized, unrealized }` (sent each tick)
+
+### Frontend Structure
+```
+frontend/src/
+├── App.tsx            # Main component orchestrating all panels
+├── types.ts          # TypeScript types for WebSocket messages
+├── main.tsx          # Entry: StrictMode > ErrorBoundary > ThemeProvider > App
+├── index.css         # Global styles — dark/light CSS variable themes
+├── hooks/
+│   └── useSimulation.ts   # WS + REST hook: start, stop, step, setSpeed
+├── contexts/
+│   └── ThemeContext.tsx   # Dark/light theme with localStorage persistence
+└── components/
+    ├── ConfigPanel.tsx    # Simulation config form
+    ├── OrderBook.tsx     # Live bid/ask depth display
+    ├── PriceChart.tsx   # Line chart of mid price (recharts)
+    ├── TradeTape.tsx    # Scrolling recent trades list
+    ├── PnLDashboard.tsx  # Per-agent realized/unrealized PnL + positions
+    └── ErrorBoundary.tsx
+```
+
+Tech stack: React 18 + TypeScript + Vite + Recharts. Single-page app (no router). Dark/light theme via CSS custom properties.
 
 ## Deployment
 
@@ -182,4 +228,4 @@ Pushes to `main` auto-trigger both deployments.
 
 ## Additional Docs
 
-`docs/` has supplementary documentation: `architecture.md`, `spec.md`, `roadmap.md`, `research.md`.
+`docs/` has supplementary documentation: `architecture.md`, `spec.md`, `roadmap.md`, `research.md`, `idea_review.md`.
