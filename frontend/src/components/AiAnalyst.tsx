@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Sparkles } from "lucide-react";
 import { analyzeMarket } from "../services/groqService";
 import type { TickMsg, PricePoint } from "../types";
 
@@ -57,67 +58,74 @@ export default function AiAnalyst({ tick, priceHistory, traderPnL }: Props) {
       const result = await analyzeMarket({ prompt });
       setAnalysis(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Analysis failed");
+      setError(e instanceof Error ? e.message : "Analysis failed. Make sure the backend is running.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div className="panel-title">AI Market Analyst</div>
+    <div className="ai-analyst-card">
+      {/* Header */}
+      <div className="ai-analyst-header">
+        <div className="ai-analyst-header-left">
+          <Sparkles size={14} strokeWidth={2} />
+          <span className="ai-analyst-title">AI Market Analyst</span>
+        </div>
         <button
-          className="btn btn-secondary"
-          style={{ fontSize: 11, padding: "4px 10px" }}
+          className="ai-ask-btn"
           onClick={handleAnalyze}
           disabled={loading}
           title="Get AI analysis of current market state"
         >
-          {loading ? "Analyzing..." : "Ask AI"}
+          {loading ? (
+            <>
+              <span className="ai-spinner" />
+              Analyzing
+            </>
+          ) : (
+            <>
+              <Sparkles size={12} strokeWidth={2} />
+              Ask AI
+            </>
+          )}
         </button>
       </div>
 
-      {error && (
-        <div style={{
-          fontSize: 11,
-          color: "var(--red)",
-          padding: "6px 8px",
-          background: "var(--red-bg)",
-          borderRadius: 6,
-          border: "1px solid var(--red-dim)",
-        }}>
-          {error}
-        </div>
-      )}
+      {/* Body */}
+      <div className="ai-analyst-body">
+        {error && (
+          <div className="ai-error">
+            {error}
+          </div>
+        )}
 
-      {analysis && (
-        <div style={{
-          fontSize: 12,
-          lineHeight: 1.6,
-          color: "var(--text-secondary)",
-          padding: "8px 10px",
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: 6,
-          maxHeight: 200,
-          overflowY: "auto",
-        }}>
-          {analysis}
-        </div>
-      )}
+        {analysis && (
+          <div className="ai-analysis">
+            {analysis.split("\n").map((line, i) => (
+              <p key={i}>{line || " "}</p>
+            ))}
+          </div>
+        )}
 
-      {!analysis && !error && !loading && (
-        <div style={{
-          fontSize: 11,
-          color: "var(--text-muted)",
-          lineHeight: 1.5,
-          fontStyle: "italic",
-        }}>
-          Click &quot;Ask AI&quot; to get a plain-English explanation of the current market state,
-          price dynamics, and agent behavior.
-        </div>
-      )}
+        {!analysis && !error && !loading && (
+          <div className="ai-empty">
+            <div className="ai-empty-icon">
+              <Sparkles size={16} strokeWidth={1.5} />
+            </div>
+            <p>Get a plain-English explanation of the current market state — spread dynamics, agent behavior, and price drivers.</p>
+          </div>
+        )}
+
+        {loading && !analysis && (
+          <div className="ai-loading">
+            <div className="ai-loading-bar" />
+            <div className="ai-loading-bar" style={{ width: "60%" }} />
+            <div className="ai-loading-bar" style={{ width: "80%" }} />
+            <span>Analyzing market data...</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

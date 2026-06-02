@@ -52,7 +52,7 @@ export default function PnLDashboard({ mmResult, traderPnL, livePositions = {}, 
       <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
         {/* MM card */}
         {mmResult && (
-          <div className="pnl-card" style={{ borderLeft: "3px solid var(--blue)" }}>
+          <div className="pnl-card" style={{ borderLeft: "3px solid var(--accent)" }}>
             <div className="pnl-card-title">Market Maker</div>
             <div className="pnl-card-value" style={{ color: mmResult.pnl >= 0 ? "var(--green)" : "var(--red)" }}>
               {fmt(mmResult.pnl)}

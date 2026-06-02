@@ -214,9 +214,9 @@ export default function SimulationApp() {
     <div className="app">
       <header className="header">
         <div className="header-logo">
-          <div className="header-logo-icon">JS</div>
+          <div className="header-logo-icon accent-logo">MM</div>
           <div>
-            <div className="header-title">Mini Jane Street Simulator</div>
+            <div className="header-title">Mini Market Simulator</div>
             <div className="header-subtitle">Market Microstructure Engine</div>
           </div>
         </div>

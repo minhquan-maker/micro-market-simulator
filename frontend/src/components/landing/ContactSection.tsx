@@ -101,13 +101,13 @@ export default function ContactSection() {
                   <ExternalLink size={11} strokeWidth={2} className="text-gray-400 ml-auto" />
                 </a>
                 <a
-                  href="mailto:ngminnhquan@gmail.com"
+                  href="mailto:minhquan.alex2512@gmail.com"
                   className="flex items-center gap-3 text-[13px] sm:text-[14px] font-medium text-gray-700 hover:text-[#F26522] transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-lg bg-[#F26522]/10 flex items-center justify-center group-hover:bg-[#F26522]/20 transition-colors">
                     <Mail size={15} strokeWidth={1.8} className="text-[#F26522]" />
                   </div>
-                  <span>ngminnhquan@gmail.com</span>
+                  <span>minhquan.alex2512@gmail.com</span>
                   <ExternalLink size={11} strokeWidth={2} className="text-gray-400 ml-auto" />
                 </a>
               </div>

@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import type { TickMsg } from "../types";
 
 interface Props {
@@ -39,7 +40,6 @@ function generateExplanation(tick: TickMsg | null, history: { price: number }[])
     }
   }
 
-  // Momentum detection
   if (history.length >= 5) {
     const recent = history.slice(-5);
     const first = recent[0].price;
@@ -52,7 +52,6 @@ function generateExplanation(tick: TickMsg | null, history: { price: number }[])
     }
   }
 
-  // Order book imbalance
   const bidTotal = tick.bid_depth.reduce((s, [, q]) => s + q, 0);
   const askTotal = tick.ask_depth.reduce((s, [, q]) => s + q, 0);
   if (bidTotal + askTotal > 0) {
@@ -64,7 +63,6 @@ function generateExplanation(tick: TickMsg | null, history: { price: number }[])
     }
   }
 
-  // MM activity
   const mmPos = tick.positions.find((p) => p.id === "mm-1");
   if (mmPos && mmPos.position !== 0) {
     if (mmPos.position > 0) {
@@ -85,22 +83,14 @@ export default function EducationalSidebar({ tick, priceHistory }: Props) {
   const messages = generateExplanation(tick, priceHistory);
 
   return (
-    <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: 12 }}>
-      <div className="panel-title" style={{ marginBottom: 4 }}>What&apos;s Happening</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div className="edu-sidebar-card">
+      <div className="edu-header">
+        <Info size={12} strokeWidth={2} />
+        <span>Live Insight</span>
+      </div>
+      <div className="edu-body">
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              padding: "8px 10px",
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              fontSize: 12,
-              lineHeight: 1.5,
-              color: "var(--text-secondary)",
-            }}
-          >
+          <div key={i} className="edu-message">
             {msg}
           </div>
         ))}

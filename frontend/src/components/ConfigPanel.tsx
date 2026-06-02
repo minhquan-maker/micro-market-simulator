@@ -88,9 +88,9 @@ export default function ConfigPanel({
                   justifyContent: "space-between",
                   padding: "6px 10px",
                   borderRadius: 6,
-                  border: `1px solid ${(config.difficulty ?? "") === opt.id ? "var(--blue)" : "var(--border)"}`,
-                  background: (config.difficulty ?? "") === opt.id ? "var(--blue-bg)" : "var(--bg-card)",
-                  color: (config.difficulty ?? "") === opt.id ? "var(--blue)" : "var(--text-secondary)",
+                  border: `1px solid ${(config.difficulty ?? "") === opt.id ? "var(--accent)" : "var(--border)"}`,
+                  background: (config.difficulty ?? "") === opt.id ? "var(--accent-bg)" : "var(--bg-card)",
+                  color: (config.difficulty ?? "") === opt.id ? "var(--accent)" : "var(--text-secondary)",
                   cursor: isRunning ? "not-allowed" : "pointer",
                   opacity: isRunning ? 0.5 : 1,
                   fontSize: 12,
@@ -204,7 +204,7 @@ export default function ConfigPanel({
               checked={config.step_mode ?? false}
               disabled={isRunning}
               onChange={(e) => setConfig({ ...config, step_mode: e.target.checked })}
-              style={{ accentColor: "var(--blue)" }}
+              style={{ accentColor: "var(--accent)" }}
             />
             Step Mode
           </label>
