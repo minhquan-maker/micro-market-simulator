@@ -129,8 +129,10 @@ cd frontend && npm run dev   # proxies /api and /ws to :8000
 
 ### API
 ```
-POST /api/simulate  { num_ticks, volatility, seed, initial_price }  → { run_id }
+POST /api/simulate  { num_ticks, volatility, seed, initial_price, step_mode }  → { run_id }
 GET  /api/simulate/{run_id}  → { status, result }
+POST /api/simulate/{run_id}/step  → triggers one tick in step mode
+POST /api/simulate/{run_id}/speed  { delay_ms }  → updates tick delay
 WS   /ws/simulate/{run_id}   → streams tick messages
 ```
 
@@ -147,19 +149,21 @@ WS   /ws/simulate/{run_id}   → streams tick messages
 POST /api/simulate → run_id
 WS /ws/simulate/{run_id}
   SimulationManager.start_simulation(run_id) → asyncio.create_task
-    engine.step() loop with asyncio.sleep(0.01) per tick
+    engine.step() loop with `asyncio.sleep(delay)` per tick (configurable via `/speed`)
     asyncio.Queue.put(msg.to_dict())
     WebSocket.send_json(msg)
       useSimulation hook → onTick(msg) / onComplete(msg)
 ```
 
 Simulation runs fully in Python. Ticks are streamed one-by-one over WebSocket.
+`tick_delay_ms` controls the sleep between ticks (default from `SimulationRequest`, overridable via `/speed`).
 
 ### Frontend types
 Frontend types are in `frontend/src/types.ts` (not a directory). Key types:
-- `TickMsg` — every tick payload with order book + trades
+- `TickMsg` — every tick payload with order book + trades + per-agent positions
+- `CompleteMsg` — final analytics with `TraderPnL[]` and `AnalyticsMetrics`
 - `Trade` — `{ price, quantity, side, counterparty, timestamp }`
-- `TraderPnL` — `{ id, realized, unrealized, position }`
+- `AgentPosition` — `{ id, position, realized, unrealized }` (sent each tick)
 
 ## Deployment
 
