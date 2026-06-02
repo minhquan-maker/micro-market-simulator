@@ -10,7 +10,7 @@ export default function ContactSection() {
         {/* Badge */}
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
           <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-[11px] sm:text-[12px] font-semibold">3</span>
+            <span className="text-white text-[11px] sm:text-[12px] font-semibold">5</span>
           </div>
           <span className="text-[12px] sm:text-[13px] font-medium border border-gray-300 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-gray-600">
             About the Creator
@@ -22,9 +22,9 @@ export default function ContactSection() {
           {/* Left: story */}
           <div>
             <h2
-              className="font-medium leading-[1.08] tracking-[-0.03em] text-gray-900 mb-6 sm:mb-8"
+              className="font-medium leading-[1.1] tracking-[-0.025em] text-gray-900 mb-6 sm:mb-8"
               style={{
-                fontSize: "clamp(1.75rem, 5vw, 3.2rem)",
+                fontSize: "clamp(1.5rem, 4vw, 3rem)",
                 fontFamily: "Inter, system-ui, sans-serif",
               }}
             >
@@ -32,10 +32,10 @@ export default function ContactSection() {
               <br />
               <span className="text-[#F26522]">how markets really work.</span>
             </h2>
-            <div className="flex flex-col gap-5 text-[15px] sm:text-[16px] text-gray-600 leading-relaxed">
+            <div className="flex flex-col gap-4 text-[14px] sm:text-[15px] text-gray-600 leading-relaxed">
               <p>
                 This simulator was created to bridge the gap between abstract financial theory
-                and the concrete mechanics of price formation. It is inspired by the rigorous
+                and the concrete mechanics of price formation. Inspired by the rigorous
                 approach of firms like Jane Street and Optiver, where understanding
                 microstructure is not optional — it is the job.
               </p>
@@ -54,82 +54,81 @@ export default function ContactSection() {
           </div>
 
           {/* Right: creator card */}
-          <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-2xl p-7 sm:p-8 shadow-sm border border-gray-200">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-xl tracking-tight">NMQ</span>
+          <div className="flex flex-col gap-5">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-sm border border-gray-200">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-14 h-14 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-lg tracking-tight">NMQ</span>
                 </div>
                 <div>
-                  <h3 className="text-[17px] font-semibold text-gray-900 mb-1">
+                  <h3 className="text-[16px] font-semibold text-gray-900 mb-1">
                     Nguyen Minh Quan
                   </h3>
-                  <p className="text-[13px] sm:text-[14px] text-gray-500">
+                  <p className="text-[13px] text-gray-500">
                     Founder & Developer
                   </p>
                 </div>
               </div>
 
-              <p className="text-[14px] sm:text-[15px] text-gray-600 leading-relaxed mb-6">
+              <p className="text-[13px] sm:text-[14px] text-gray-600 leading-relaxed mb-5">
                 Quantitative finance enthusiast with a background in software engineering.
                 Building tools that make complex market mechanics accessible and interactive.
               </p>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5">
                 <a
                   href="https://www.linkedin.com/in/ngminnhquan/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-[14px] font-medium text-gray-700 hover:text-[#0A66C2] transition-colors group"
+                  className="flex items-center gap-3 text-[13px] sm:text-[14px] font-medium text-gray-700 hover:text-[#0A66C2] transition-colors group"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-[#0A66C2]/10 flex items-center justify-center group-hover:bg-[#0A66C2]/20 transition-colors">
-                    <Linkedin size={16} strokeWidth={1.8} className="text-[#0A66C2]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#0A66C2]/10 flex items-center justify-center group-hover:bg-[#0A66C2]/20 transition-colors">
+                    <Linkedin size={15} strokeWidth={1.8} className="text-[#0A66C2]" />
                   </div>
                   <span>Connect on LinkedIn</span>
-                  <ExternalLink size={12} strokeWidth={2} className="text-gray-400 ml-auto" />
+                  <ExternalLink size={11} strokeWidth={2} className="text-gray-400 ml-auto" />
                 </a>
                 <a
-                  href="https://github.com/ngminnhquan"
+                  href="https://github.com/nguyenminhquan-maker"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-[14px] font-medium text-gray-700 hover:text-gray-900 transition-colors group"
+                  className="flex items-center gap-3 text-[13px] sm:text-[14px] font-medium text-gray-700 hover:text-gray-900 transition-colors group"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                    <Github size={16} strokeWidth={1.8} />
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                    <Github size={15} strokeWidth={1.8} />
                   </div>
                   <span>GitHub Profile</span>
-                  <ExternalLink size={12} strokeWidth={2} className="text-gray-400 ml-auto" />
+                  <ExternalLink size={11} strokeWidth={2} className="text-gray-400 ml-auto" />
                 </a>
                 <a
                   href="mailto:ngminnhquan@gmail.com"
-                  className="flex items-center gap-3 text-[14px] font-medium text-gray-700 hover:text-[#F26522] transition-colors group"
+                  className="flex items-center gap-3 text-[13px] sm:text-[14px] font-medium text-gray-700 hover:text-[#F26522] transition-colors group"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-[#F26522]/10 flex items-center justify-center group-hover:bg-[#F26522]/20 transition-colors">
-                    <Mail size={16} strokeWidth={1.8} className="text-[#F26522]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#F26522]/10 flex items-center justify-center group-hover:bg-[#F26522]/20 transition-colors">
+                    <Mail size={15} strokeWidth={1.8} className="text-[#F26522]" />
                   </div>
                   <span>ngminnhquan@gmail.com</span>
-                  <ExternalLink size={12} strokeWidth={2} className="text-gray-400 ml-auto" />
+                  <ExternalLink size={11} strokeWidth={2} className="text-gray-400 ml-auto" />
                 </a>
               </div>
             </div>
 
-            {/* CTA card */}
-            <div className="bg-gray-900 rounded-2xl p-7 sm:p-8">
-              <h3 className="text-[15px] sm:text-[16px] font-semibold text-white mb-3">
-                Interested in the code?
+            {/* Open source card */}
+            <div className="bg-gray-900 rounded-2xl p-6 sm:p-7">
+              <h3 className="text-[14px] sm:text-[15px] font-semibold text-white mb-2.5">
+                Open Source
               </h3>
-              <p className="text-[13px] sm:text-[14px] text-white/50 leading-relaxed mb-5">
-                The full source is open. Explore the simulation engine, the matching logic,
-                and the agent strategies on GitHub.
+              <p className="text-[12px] sm:text-[13px] text-white/45 leading-relaxed mb-4">
+                The full source is open. Explore the simulation engine, matching logic, and agent strategies.
               </p>
               <a
-                href="https://github.com/ngminnhquan/market-microstructure-simulator"
+                href="https://github.com/nguyenminhquan-maker/micro-market-simulator"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-white text-gray-900 text-[13px] sm:text-[14px] font-semibold rounded-full px-5 py-2.5 hover:bg-gray-100 transition-colors"
+                className="inline-flex items-center gap-2 bg-white text-gray-900 text-[12px] sm:text-[13px] font-semibold rounded-full px-4 py-2 hover:bg-gray-100 transition-colors"
               >
-                View on GitHub
-                <ArrowRight size={14} strokeWidth={2.5} />
+                View Repository
+                <ArrowRight size={13} strokeWidth={2.5} />
               </a>
             </div>
           </div>

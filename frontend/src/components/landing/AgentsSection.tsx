@@ -164,7 +164,7 @@ export default function AgentsSection() {
         {/* Badge row */}
         <div className="flex items-center gap-3 mb-6 sm:mb-8 px-5 sm:px-8 lg:px-12">
           <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-[11px] sm:text-[12px] font-semibold">2</span>
+            <span className="text-white text-[11px] sm:text-[12px] font-semibold">3</span>
           </div>
           <span className="text-[12px] sm:text-[13px] font-medium border border-gray-300 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-gray-600">
             The Five Agents

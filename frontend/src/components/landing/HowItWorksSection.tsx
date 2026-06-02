@@ -85,7 +85,7 @@ export default function HowItWorksSection() {
             return (
               <div
                 key={step.number}
-                className="flex flex-col gap-5 bg-white/5 rounded-2xl p-6 sm:p-7 border border-white/10 hover:border-white/20 transition-colors duration-300"
+                className="relative flex flex-col gap-5 bg-white/5 rounded-2xl p-6 sm:p-7 border border-white/10 hover:border-white/20 transition-colors duration-300"
               >
                 {/* Step number + icon */}
                 <div className="flex items-start justify-between">
