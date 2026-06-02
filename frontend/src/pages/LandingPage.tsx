@@ -1,8 +1,9 @@
 import Nav from "../components/landing/Nav";
 import HeroSection from "../components/landing/HeroSection";
 import AboutSection from "../components/landing/AboutSection";
+import HowItWorksSection from "../components/landing/HowItWorksSection";
 import AgentsSection from "../components/landing/AgentsSection";
-import CtaSection from "../components/landing/CtaSection";
+import ContactSection from "../components/landing/ContactSection";
 
 export default function LandingPage() {
   return (
@@ -10,8 +11,9 @@ export default function LandingPage() {
       <Nav />
       <HeroSection />
       <AboutSection />
+      <HowItWorksSection />
       <AgentsSection />
-      <CtaSection />
+      <ContactSection />
       <footer className="bg-[#0a0e17] py-6 sm:py-8 border-t border-white/10">
         <div className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">

@@ -2,22 +2,25 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
 import LondonClock from "./LondonClock";
+import TextRollButton from "./TextRollButton";
 
-const NAV_LINKS = ["Projects", "Studio", "Journal", "Connect"];
-
-function TextRollButton({ children }: { children: string }) {
-  return (
-    <div className="relative overflow-hidden h-5">
-      <span className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:-translate-y-1/2">
-        <span>{children}</span>
-        <span>{children}</span>
-      </span>
-    </div>
-  );
-}
+const NAV_LINKS = [
+  { label: "About", href: "#about" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Agents", href: "#agents" },
+  { label: "Contact", href: "#contact" },
+];
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleNavClick = (href: string) => {
+    setMenuOpen(false);
+    const el = document.querySelector(href);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <>
@@ -36,12 +39,13 @@ export default function Nav() {
           {/* Center nav links (desktop) */}
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((link) => (
-              <span
-                key={link}
-                className="text-gray-900 text-sm hover:text-gray-500 transition-colors duration-300 cursor-pointer"
+              <button
+                key={link.label}
+                onClick={() => handleNavClick(link.href)}
+                className="text-gray-900 text-sm hover:text-gray-500 transition-colors duration-300 cursor-pointer bg-transparent border-none p-0"
               >
-                {link}
-              </span>
+                {link.label}
+              </button>
             ))}
           </div>
 
@@ -49,7 +53,7 @@ export default function Nav() {
           <div className="flex items-center gap-3">
             <div className="hidden lg:flex items-center gap-2 text-gray-600">
               <span className="text-[13px] hidden xl:block">
-                Taking on projects for Q1 2026
+                London time
               </span>
               <LondonClock />
             </div>
@@ -93,13 +97,13 @@ export default function Nav() {
             </div>
             <div className="flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
-                <span
-                  key={link}
-                  className="text-gray-900 text-[28px] font-medium py-2 cursor-pointer"
-                  onClick={() => setMenuOpen(false)}
+                <button
+                  key={link.label}
+                  onClick={() => handleNavClick(link.href)}
+                  className="text-gray-900 text-[28px] font-medium py-2 cursor-pointer bg-transparent border-none text-left p-0"
                 >
-                  {link}
-                </span>
+                  {link.label}
+                </button>
               ))}
             </div>
             <Link
@@ -107,7 +111,7 @@ export default function Nav() {
               onClick={() => setMenuOpen(false)}
               className="flex items-center justify-between bg-[#F26522] text-white text-[15px] font-semibold rounded-full px-5 py-3"
             >
-              Start a project
+              <TextRollButton>Launch Simulator</TextRollButton>
               <ArrowRight size={16} strokeWidth={2.5} />
             </Link>
           </div>

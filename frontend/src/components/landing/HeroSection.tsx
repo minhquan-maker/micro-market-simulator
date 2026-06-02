@@ -1,16 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-
-function TextRollButton({ children }: { children: string }) {
-  return (
-    <div className="relative overflow-hidden h-5">
-      <span className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:-translate-y-1/2">
-        <span>{children}</span>
-        <span>{children}</span>
-      </span>
-    </div>
-  );
-}
+import TextRollButton from "./TextRollButton";
 
 function PartnerBadge() {
   return (
@@ -74,27 +64,27 @@ export default function HeroSection() {
               className="block text-[clamp(1.75rem,7vw,4.2rem)] sm:text-[clamp(2.5rem,5vw,4.2rem)]"
               style={{ fontFamily: "Inter, system-ui, sans-serif" }}
             >
-              See the market
+              Learn how markets work.
             </span>
             <span
               className="block text-[clamp(1.75rem,7vw,4.2rem)] sm:text-[clamp(2.5rem,5vw,4.2rem)]"
               style={{ fontFamily: "Inter, system-ui, sans-serif" }}
             >
-              think in real time.
+              Order books, agents,
             </span>
             <span
               className="block text-[clamp(1.75rem,7vw,4.2rem)] sm:text-[clamp(2.5rem,5vw,4.2rem)] text-[#F26522]"
               style={{ fontFamily: "Inter, system-ui, sans-serif" }}
             >
-              No account. No data. No friction.
+              price discovery — live.
             </span>
           </h1>
 
           {/* Sub-headline */}
           <p className="text-[15px] sm:text-[16px] text-gray-600 leading-relaxed mb-8 sm:mb-10 max-w-2xl">
-            A real-time market microstructure simulator. Watch five trading agents interact
-            in a live order book — observe price formation, spread dynamics, and
-            trading strategy as it happens.
+            A real-time market microstructure simulator inspired by Jane Street and Optiver.
+            Watch five trading agents compete in a live order book — see how prices form,
+            spreads evolve, and trading strategies interact. No account. No data.
           </p>
 
           {/* CTA row */}

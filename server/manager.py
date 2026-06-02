@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 import uuid
 from decimal import Decimal
 from pathlib import Path
-import sys
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 # Add the quant project src to the path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from mini_jane_street.simulation import SimulationConfig, SimulationEngine
-from mini_jane_street.traders import RandomTaker, MomentumTrader, MeanReversionTrader
-from mini_jane_street.market_maker import MarketMaker
+from models import CompleteMessage, SimulationRequest, SimulationRun, TickMessage
 
-from models import SimulationRun, SimulationRequest, TickMessage, CompleteMessage
+from mini_jane_street.market_maker import MarketMaker
+from mini_jane_street.simulation import SimulationConfig, SimulationEngine
+from mini_jane_street.traders import MeanReversionTrader, MomentumTrader, RandomTaker
 
 
 class SimulationManager:
@@ -59,26 +59,47 @@ class SimulationManager:
             return
 
         try:
+            # Apply difficulty presets
+            volatility = run.config.volatility
+            tick_delay = run.config.tick_delay_ms
+
+            if run.config.difficulty == "beginner":
+                volatility = 0.2
+                tick_delay = 200
+            elif run.config.difficulty == "intermediate":
+                volatility = 0.5
+                tick_delay = 50
+            elif run.config.difficulty == "advanced":
+                volatility = 1.5
+                tick_delay = 10
+
             cfg = SimulationConfig(
                 initial_price=Decimal(str(run.config.initial_price)),
-                volatility=run.config.volatility,
+                volatility=volatility,
                 tick_size=Decimal("0.01"),
                 num_ticks=run.config.num_ticks,
                 seed=run.config.seed,
             )
 
-            traders = [
-                RandomTaker(trader_id="rt-1", action_prob=0.08, min_qty=1, max_qty=15),
-                RandomTaker(trader_id="rt-2", action_prob=0.06, min_qty=1, max_qty=10),
-                MomentumTrader(trader_id="mom-1", momentum_threshold=0.001, window_size=10),
-                MeanReversionTrader(trader_id="mr-1", reversion_threshold=0.002, window_size=20),
-            ]
+            enabled = set(run.config.enabled_agents)
 
-            mm = MarketMaker(
-                trader_id="mm-1",
-                base_spread=Decimal("0.02"),
-                quote_size=10,
-            )
+            traders = []
+            if "rt-1" in enabled:
+                traders.append(RandomTaker(trader_id="rt-1", action_prob=0.08, min_qty=1, max_qty=15))
+            if "rt-2" in enabled:
+                traders.append(RandomTaker(trader_id="rt-2", action_prob=0.06, min_qty=1, max_qty=10))
+            if "mom-1" in enabled:
+                traders.append(MomentumTrader(trader_id="mom-1", momentum_threshold=0.001, window_size=10))
+            if "mr-1" in enabled:
+                traders.append(MeanReversionTrader(trader_id="mr-1", reversion_threshold=0.002, window_size=20))
+
+            mm = None
+            if "mm-1" in enabled:
+                mm = MarketMaker(
+                    trader_id="mm-1",
+                    base_spread=Decimal("0.02"),
+                    quote_size=10,
+                )
 
             engine = SimulationEngine(config=cfg, traders=traders, market_maker=mm)
             run.status = "running"
@@ -120,14 +141,15 @@ class SimulationManager:
                         "realized": float(realized),
                         "unrealized": float(unrealized),
                     })
-                # MM position
-                mm_stats = mm.stats
-                positions.append({
-                    "id": "mm-1",
-                    "position": mm_stats.inventory,
-                    "realized": float(mm_stats.realized_pnl),
-                    "unrealized": float(mm_stats.unrealized_pnl),
-                })
+                # MM position (if enabled)
+                if mm is not None:
+                    mm_stats = mm.stats
+                    positions.append({
+                        "id": "mm-1",
+                        "position": mm_stats.inventory,
+                        "realized": float(mm_stats.realized_pnl),
+                        "unrealized": float(mm_stats.unrealized_pnl),
+                    })
 
                 msg = TickMessage(
                     tick=tick,
@@ -145,8 +167,8 @@ class SimulationManager:
 
                 await self._queues[run_id].put(msg.to_dict())
 
-                # Phase 3.4: configurable tick delay
-                delay = run.config.tick_delay_ms / 1000.0
+                # Phase 3.4: configurable tick delay (difficulty preset overrides user setting)
+                delay = tick_delay / 1000.0
                 await asyncio.sleep(delay)
 
             # Phase 3.2: compute analytics on completion
@@ -172,7 +194,7 @@ class SimulationManager:
                 "total_pnl": float(overall.total_pnl),
             }
 
-            mm_stats = mm.stats
+            mm_stats = mm.stats if mm is not None else None
             trader_results = [
                 {
                     "id": t.trader_id,
@@ -186,15 +208,16 @@ class SimulationManager:
             complete = CompleteMessage(
                 final_price=float(engine.exchange.mid_price),
                 total_trades=len(engine.exchange.trades),
-                mm_pnl=float(mm_stats.realized_pnl),
-                mm_position=mm_stats.inventory,
-                mm_unrealized=float(mm_stats.unrealized_pnl),
+                mm_pnl=float(mm_stats.realized_pnl) if mm_stats else 0.0,
+                mm_position=mm_stats.inventory if mm_stats else 0,
+                mm_unrealized=float(mm_stats.unrealized_pnl) if mm_stats else 0.0,
                 trader_pnl=trader_results,
                 analytics=analytics,
                 run_id=run_id,
             )
             await self._queues[run_id].put(complete.to_dict())
             run.status = "complete"
+            run.result = complete.to_dict()
 
         except Exception as e:
             run.status = "error"

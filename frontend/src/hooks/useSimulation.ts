@@ -10,6 +10,8 @@ interface SimConfig {
   initial_price: number;
   tick_delay_ms?: number;
   step_mode?: boolean;
+  enabled_agents?: string[];
+  difficulty?: string;
 }
 
 interface UseSimulationOptions {
@@ -32,79 +34,77 @@ export function useSimulation({ onTick, onComplete }: UseSimulationOptions = {})
   const [isStepMode, setIsStepMode] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
-  const start = useCallback(
-    async (config: SimConfig) => {
-      setStatus("connecting");
-      setError(null);
+  // Store callbacks in refs so the async start() always sees the latest version
+  const onTickRef = useRef(onTick);
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onTickRef.current = onTick;
+    onCompleteRef.current = onComplete;
+  });
 
-      try {
-        const res = await fetch(`${API_BASE}/api/simulate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            num_ticks: config.num_ticks,
-            volatility: config.volatility,
-            seed: config.seed,
-            initial_price: config.initial_price,
-            tick_delay_ms: config.tick_delay_ms ?? 10,
-            step_mode: config.step_mode ?? false,
-          }),
-        });
-        const data = await res.json();
-        const id: string = data.run_id;
-        setRunId(id);
-        setIsStepMode(config.step_mode ?? false);
-        setStatus("running");
+  const start = useCallback(async (config: SimConfig) => {
+    setStatus("connecting");
+    setError(null);
 
-        const wsBase = API_BASE.replace(/^http/, "ws");
-        const wsProto = wsBase.startsWith("wss") ? "wss:" : "ws:";
-        const wsHost = wsBase.replace(/^https?:\/\//, "").replace(/^wss?:\/\//, "");
-        const ws = new WebSocket(`${wsProto}//${wsHost}/ws/simulate/${id}`);
-        wsRef.current = ws;
+    try {
+      const res = await fetch(`${API_BASE}/api/simulate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          num_ticks: config.num_ticks,
+          volatility: config.volatility,
+          seed: config.seed,
+          initial_price: config.initial_price,
+          tick_delay_ms: config.tick_delay_ms ?? 10,
+          step_mode: config.step_mode ?? false,
+          enabled_agents: config.enabled_agents ?? ["mm-1", "rt-1", "rt-2", "mom-1", "mr-1"],
+          difficulty: config.difficulty ?? null,
+        }),
+      });
+      const data = await res.json();
+      const id: string = data.run_id;
+      setRunId(id);
+      setIsStepMode(config.step_mode ?? false);
+      setStatus("running");
 
-        ws.onmessage = (event) => {
-          const msg: WsMessage = JSON.parse(event.data);
+      const wsProto = API_BASE.startsWith("https") ? "wss:" : "ws:";
+      const wsHost = API_BASE.replace(/^https?:\/\//, "");
+      const ws = new WebSocket(`${wsProto}//${wsHost}/ws/simulate/${id}`);
+      wsRef.current = ws;
 
-          if (msg.type === "start") {
-            // Initial snapshot received; simulation is about to begin
-          } else if (msg.type === "tick") {
-            onTick?.(msg);
-          } else if (msg.type === "complete") {
-            onComplete?.({
-              mm_pnl: msg.mm_pnl,
-              mm_position: msg.mm_position,
-              mm_unrealized: msg.mm_unrealized,
-              trader_pnl: msg.trader_pnl,
-              total_trades: msg.total_trades,
-              final_price: msg.final_price,
-              analytics: msg.analytics,
-            });
-            setStatus("complete");
-            ws.close();
-          } else if (msg.type === "error") {
-            setError(msg.message);
-            setStatus("error");
-            ws.close();
-          }
-        };
+      ws.onmessage = (event) => {
+        const msg: WsMessage = JSON.parse(event.data);
 
-        ws.onerror = () => {
-          setError("WebSocket connection failed");
+        if (msg.type === "tick") {
+          onTickRef.current?.(msg);
+        } else if (msg.type === "complete") {
+          onCompleteRef.current?.({
+            mm_pnl: msg.mm_pnl,
+            mm_position: msg.mm_position,
+            mm_unrealized: msg.mm_unrealized,
+            trader_pnl: msg.trader_pnl,
+            total_trades: msg.total_trades,
+            final_price: msg.final_price,
+            analytics: msg.analytics,
+          });
+          setStatus("complete");
+          ws.close();
+        } else if (msg.type === "error") {
+          setError(msg.message);
           setStatus("error");
-        };
+          ws.close();
+        }
+      };
 
-        ws.onclose = () => {
-          if (status === "connecting" || status === "running") {
-            // closed unexpectedly
-          }
-        };
-      } catch (e) {
-        setError(String(e));
+      ws.onerror = () => {
+        setError("WebSocket connection failed");
         setStatus("error");
-      }
-    },
-    [onTick, onComplete] // eslint-disable-line react-hooks/exhaustive-deps
-  );
+      };
+    } catch (e) {
+      setError(String(e));
+      setStatus("error");
+    }
+  }, []);
 
   const stop = useCallback(() => {
     wsRef.current?.close();
@@ -113,7 +113,6 @@ export function useSimulation({ onTick, onComplete }: UseSimulationOptions = {})
     setIsStepMode(false);
   }, []);
 
-  // Phase 3.4: trigger one step in step mode
   const step = useCallback(async () => {
     if (!runId) return;
     try {
@@ -121,7 +120,6 @@ export function useSimulation({ onTick, onComplete }: UseSimulationOptions = {})
     } catch {}
   }, [runId]);
 
-  // Phase 3.4: update tick speed
   const setSpeed = useCallback(async (delayMs: number) => {
     if (!runId) return;
     try {

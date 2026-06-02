@@ -371,12 +371,12 @@ body {
 /* Right sidebar — PnL & Config */
 .sidebar {
   background: var(--bg-secondary);
-  overflow: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-content {
-  flex: 1;
-  overflow-y: auto;
   padding: 12px;
   display: flex;
   flex-direction: column;

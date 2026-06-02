@@ -16,6 +16,22 @@ export default function OrderBook({ tick, spreadHistory = [] }: Props) {
 
   const spreadData = spreadHistory.map((value, index) => ({ index, value }));
 
+  // O(n) cumulative totals
+  const bidCumulative: number[] = [];
+  let bidRun = 0;
+  for (const [, q] of bid_depth) {
+    bidRun += q;
+    bidCumulative.push(bidRun);
+  }
+
+  // ask_cumulative[i] = sum of ask_depth[i..end] quantities
+  const askCumulative: number[] = [];
+  let askRun = 0;
+  for (let i = ask_depth.length - 1; i >= 0; i--) {
+    askRun += ask_depth[i][1];
+    askCumulative[i] = askRun;
+  }
+
   return (
     <div className="order-book-content">
       {/* Asks — reversed so lowest ask is at bottom */}
@@ -25,13 +41,12 @@ export default function OrderBook({ tick, spreadHistory = [] }: Props) {
           <span className="book-header-right">Size</span>
           <span className="book-header-right">Total</span>
         </div>
-        {[...ask_depth].reverse().map(([price, qty], i) => {
-          const total = ask_depth
-            .slice(0, ask_depth.length - i)
-            .reverse()
-            .reduce((sum, [, q]) => sum + q, 0);
+        {[...ask_depth].reverse().map(([price, qty], displayIdx) => {
+          // displayIdx goes 0..n-1 from reversed array; original index = ask_depth.length - 1 - displayIdx
+          const origIdx = ask_depth.length - 1 - displayIdx;
+          const total = askCumulative[origIdx] ?? 0;
           return (
-            <div key={`ask-${i}`} className="book-row ask">
+            <div key={`ask-${origIdx}`} className="book-row ask">
               <div
                 className="depth-bar"
                 style={{ width: `${(qty / maxAskQty) * 100}%` }}
@@ -55,7 +70,7 @@ export default function OrderBook({ tick, spreadHistory = [] }: Props) {
       {/* Bids */}
       <div className="book-side bid">
         {[...bid_depth].map(([price, qty], i) => {
-          const total = bid_depth.slice(0, i + 1).reduce((sum, [, q]) => sum + q, 0);
+          const total = bidCumulative[i] ?? 0;
           return (
             <div key={`bid-${i}`} className="book-row bid">
               <div

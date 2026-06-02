@@ -18,7 +18,7 @@ function TextRollLink({ children }: { children: string }) {
 
 export default function AboutSection() {
   return (
-    <section className="bg-white pt-16 sm:pt-20 lg:pt-32 pb-12 sm:pb-16 lg:pb-24 overflow-hidden">
+    <section id="about" className="bg-white pt-16 sm:pt-20 lg:pt-32 pb-12 sm:pb-16 lg:pb-24 overflow-hidden">
       <div className="max-w-[1440px] mx-auto">
         {/* Badge row */}
         <div className="flex items-center gap-3 mb-6 sm:mb-8 px-5 sm:px-8 lg:px-12">
@@ -54,14 +54,14 @@ export default function AboutSection() {
                 how they are matched, and how prices emerge from the continuous interaction
                 of buyers and sellers.
               </p>
-              <button className="group flex items-center gap-2 text-[#F26522] text-[14px] font-medium">
+              <a href="#how-it-works" className="group flex items-center gap-2 text-[#F26522] text-[14px] font-medium no-underline">
                 <TextRollLink>Learn about market microstructure</TextRollLink>
                 <ArrowRight
                   size={14}
                   strokeWidth={2.5}
                   className="text-[#F26522] group-hover:rotate-[-45deg] transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] flex-shrink-0"
                 />
-              </button>
+              </a>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               <img
@@ -98,14 +98,14 @@ export default function AboutSection() {
               Financial markets are not magic —<br />
               they are protocols.
             </p>
-            <button className="group flex items-center gap-2 text-[#F26522] text-[14px] font-medium">
+            <a href="#how-it-works" className="group flex items-center gap-2 text-[#F26522] text-[14px] font-medium no-underline">
               <TextRollLink>Learn about market microstructure</TextRollLink>
               <ArrowRight
                 size={14}
                 strokeWidth={2.5}
                 className="text-[#F26522] group-hover:rotate-[-45deg] transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
               />
-            </button>
+            </a>
           </div>
 
           {/* Right: large image */}

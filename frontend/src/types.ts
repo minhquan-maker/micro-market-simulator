@@ -59,6 +59,8 @@ export interface SimConfig {
   volatility: number;
   seed: number | null;
   initial_price: number;
+  enabled_agents?: string[];
+  difficulty?: string;
 }
 
 export interface Trade {

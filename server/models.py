@@ -16,6 +16,8 @@ class SimulationRequest:
     initial_price: float = 100.0
     tick_delay_ms: int = 10   # Phase 3.4: speed control
     step_mode: bool = False   # Phase 3.4: step-by-step mode
+    enabled_agents: List[str] = field(default_factory=lambda: ["mm-1", "rt-1", "rt-2", "mom-1", "mr-1"])  # which agents to run
+    difficulty: Optional[str] = None  # beginner | intermediate | advanced
 
 
 @dataclass

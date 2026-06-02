@@ -6,6 +6,8 @@ import PriceChart from "../components/PriceChart";
 import TradeTape from "../components/TradeTape";
 import PnLDashboard from "../components/PnLDashboard";
 import ConfigPanel from "../components/ConfigPanel";
+import EducationalSidebar from "../components/EducationalSidebar";
+import AiAnalyst from "../components/AiAnalyst";
 import type { TickMsg, PricePoint, TraderPnL, Trade, AgentPosition, AnalyticsMetrics } from "../types";
 
 const AGENTS = [
@@ -28,6 +30,8 @@ type SimConfig = {
   initial_price: number;
   tick_delay_ms?: number;
   step_mode?: boolean;
+  enabled_agents?: string[];
+  difficulty?: string;
 };
 
 type CompleteResult = {
@@ -68,6 +72,7 @@ export default function SimulationApp() {
     initial_price: 100.0,
     tick_delay_ms: 10,
     step_mode: false,
+    enabled_agents: ["mm-1", "rt-1", "rt-2", "mom-1", "mr-1"],
   });
 
   const [latestTick, setLatestTick] = useState<TickMsg | null>(null);
@@ -215,7 +220,15 @@ export default function SimulationApp() {
             <div className="header-subtitle">Market Microstructure Engine</div>
           </div>
         </div>
-        <div className="header-controls">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            className="btn btn-secondary"
+            style={{ fontSize: 12, padding: "6px 12px" }}
+            onClick={() => window.location.href = "/"}
+            title="Back to home"
+          >
+            ← Home
+          </button>
           <span className="header-status">
             <span className={`status-dot ${status}`} /> {status.toUpperCase()}
           </span>
@@ -328,6 +341,17 @@ export default function SimulationApp() {
             onStop={stop}
             error={error}
             onStep={step}
+          />
+          {status === "running" && (
+            <EducationalSidebar
+              tick={latestTick}
+              priceHistory={priceHistory}
+            />
+          )}
+          <AiAnalyst
+            tick={latestTick}
+            priceHistory={priceHistory}
+            traderPnL={traderPnL}
           />
         </div>
 
