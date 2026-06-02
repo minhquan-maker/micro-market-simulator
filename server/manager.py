@@ -78,6 +78,7 @@ class SimulationManager:
                         "quantity": t.quantity,
                         "side": t.side.value,
                         "counterparty": t.counterparty_id[:8],
+                        "timestamp": t.timestamp,
                     }
                     for t in new_trades
                 ]

@@ -68,7 +68,7 @@ export default function App() {
 
   const spread =
     latestTick && latestTick.best_ask > 0 && latestTick.best_bid > 0
-      ? latestTick.best_ask - latestTick.best_bid
+      ? Math.max(0, latestTick.best_ask - latestTick.best_bid)
       : null;
 
   return (
@@ -217,7 +217,7 @@ export default function App() {
           <PnLDashboard mmResult={mmResult} traderPnL={traderPnL} />
         </div>
         <div style={{ background: "var(--bg-secondary)" }}>
-          <TradeTape trades={allTrades} latestTimestamp={latestTick?.timestamp} />
+          <TradeTape trades={allTrades} />
         </div>
         <div style={{ background: "var(--bg-primary)" }}>
           {/* spacer */}

@@ -120,7 +120,7 @@ export default function ConfigPanel({
             { id: "rt-1", label: "Random Taker", color: "var(--yellow)" },
             { id: "rt-2", label: "Random Taker 2", color: "var(--yellow)" },
             { id: "mom-1", label: "Momentum Trader", color: "var(--green)" },
-            { id: "mr-1", label: "Mean Reversion", color: "var(--green)" },
+            { id: "mr-1", label: "Mean Reversion Trader", color: "var(--green)" },
           ].map((agent) => (
             <div
               key={agent.id}

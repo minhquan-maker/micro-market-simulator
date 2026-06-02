@@ -113,7 +113,7 @@ def main() -> None:
     mm: MarketMaker | None = None
     if not args.no_mm:
         mm = MarketMaker(
-            trader_id="mm-main",
+            trader_id="mm-1",
             base_spread=Decimal("0.02"),
             inventory_alpha=Decimal("0.0005"),
             quote_size=10,

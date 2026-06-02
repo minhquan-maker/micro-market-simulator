@@ -181,9 +181,14 @@ class OrderBook:
 
                 if fill_qty == resting.remaining_qty:
                     level.pop_front()
-
-            if level.is_empty():
-                del book_side[best_price]
+                    if level.is_empty():
+                        del book_side[best_price]
+                        # book_side was modified; re-fetch level for next iteration
+                        if remaining > 0 and len(book_side) > 0:
+                            best_price = next(iter(book_side))
+                            level = book_side[best_price]
+                        else:
+                            break
 
         return fills
 

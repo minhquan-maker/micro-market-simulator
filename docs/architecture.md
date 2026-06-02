@@ -1,4 +1,4 @@
-# Phase 3 — Architecture: Mini Jane Street Simulator
+# Architecture: Mini Jane Street Simulator
 
 ## System Overview
 
@@ -11,34 +11,28 @@
                              ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Simulation Engine                             │
-│  ┌────────────┐  ┌──────────────┐  ┌─────────────────────────┐  │
-│  │  Clock     │  │  EventQueue  │  │  MarketDataGenerator     │  │
-│  │  (virtual) │  │  (priority)  │  │  (price process)        │  │
-│  └────────────┘  └──────────────┘  └─────────────────────────┘  │
+│  ┌────────────┐  ┌──────────────────┐  ┌──────────────────────┐ │
+│  │  Clock     │  │ MarketDataGenerator│  │     Exchange         │ │
+│  │  (virtual) │  │ (random walk)    │  │ (central coordinator)│ │
+│  └────────────┘  └──────────────────┘  └──────────┬───────────┘ │
+│                                                      │             │
+│                     ┌────────────────────────────────┴──────┐    │
+│                     │           OrderBook                   │    │
+│                     │  bid: SortedDict[Decimal, PriceLevel]│    │
+│                     │  ask: SortedDict[Decimal, PriceLevel]│    │
+│                     │  (ascending, best bid via reversed)   │    │
+│                     └──────────────────────────────────────────┘    │
 └────────────────────────────┬─────────────────────────────────────┘
                              │
               ┌──────────────┼──────────────┐
               ▼              ▼              ▼
     ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-    │   Exchange   │  │ Trader Bots  │  │ Market Maker │
-    │              │  │              │  │   Agent      │
-    │ ┌──────────┐ │  │              │  │              │
-    │ │ Matching  │ │  │ - RandomTaker│  │              │
-    │ │ Engine   │ │  │ - Momentum   │  │              │
-    │ └──────────┘ │  │ - MeanRev    │  │              │
-    │ ┌──────────┐ │  │              │  │              │
-    │ │ OrderBook│ │  │              │  │              │
-    │ └──────────┘ │  │              │  │              │
-    └──────┬───────┘  └──────────────┘  └──────────────┘
-           │
-           ▼
-    ┌──────────────┐
-    │  Analytics   │
-    │              │
-    │ - PnL tracker│
-    │ - Metrics    │
-    │ - Reporter   │
-    └──────────────┘
+    │ Trader Bots  │  │ Market Maker │  │  Analytics   │
+    │              │  │   Agent      │  │              │
+    │ - RandomTaker│  │              │  │ - PnL tracker│
+    │ - Momentum   │  │              │  │ - Metrics    │
+    │ - MeanRev    │  │              │  │ - Reporter   │
+    └──────────────┘  └──────────────┘  └──────────────┘
 ```
 
 ---
@@ -65,12 +59,12 @@ class OrderBook:
 ```
 
 **Key Design Decisions**:
-- `bid_book: SortedDict[Decimal, deque[Order]]` — descending by key (use `reverse=True`)
-- `ask_book: SortedDict[Decimal, deque[Order]]` — ascending by key (default)
+- Both `bid_book` and `ask_book` use `SortedDict` sorted ascending by price.
+  Best bid = `next(reversed(bid_book))`; Best ask = `next(iter(ask_book))`
 - `deque` for O(1) append/pop-left within a price level
-- `orders_by_id: dict[str, Order]` — O(1) lookup for cancellations
 - No locks — single-threaded event loop
 - Immutable fills: `Fill` objects are created and never mutated
+- OrderBook owns matching: `add_order()` returns fills directly
 
 **Dependencies**: `sortedcontainers`, `decimal`, `dataclasses`
 
@@ -83,33 +77,18 @@ class OrderBook:
 **Public Interface**:
 ```python
 class MatchingEngine:
-    def process_order(self, order: Order) -> list[Fill]:
-    def process_market_order(self, order: Order) -> list[Fill]:
-    def process_limit_order(self, order: Order) -> list[Fill]
+    @staticmethod
+    def process_limit_order(order: Order, book: OrderBook) -> tuple[list[Fill], Order | None]:
+    @staticmethod
+    def process_market_order(order: Order, book: OrderBook) -> tuple[list[Fill], Order | None]:
 ```
 
 **Key Design Decisions**:
-- The matching engine is a **pure function of the order book state + incoming order**.
+- The matching engine is a **pure function** of the order book state + incoming order.
 - It does NOT modify the order book directly — it returns fills and the caller (`Exchange`) applies them.
 - This makes the matching logic **trivially testable** without mocking the book.
-- Separate `process_market_order` and `process_limit_order` for clarity; both call common `_match` helper.
-
-**Matching Algorithm**:
-```
-match(order, book):
-  remaining = order.quantity
-  while remaining > 0:
-    price_level = best_price_level_on_opposite_side(book)
-    if no_level OR (buy AND level.price > order.price) OR (sell AND level.price < order.price):
-      break  # order rests or expires
-    while remaining > 0 AND level.not_empty:
-      fill_qty = min(remaining, level.front.quantity)
-      fills.append(Fill(...))  # at level.price
-      remaining -= fill_qty
-      pop front if fully filled
-    remove empty levels
-  return fills
-```
+- Matching is handled directly inside `OrderBook.add_order()` at runtime; this module is a reference/test implementation.
+- Both bid and ask sides use ascending SortedDict; best bid via `next(reversed(bid_book))`.
 
 **Dependencies**: `orderbook`, `decimal`, `dataclasses`
 
@@ -117,7 +96,7 @@ match(order, book):
 
 ### `src/mini_jane_street/exchange.py`
 
-**Responsibility**: Central coordinator. Routes orders to matching engine, maintains open orders, emits market data.
+**Responsibility**: Central coordinator. Routes orders to the OrderBook, maintains open orders, emits market data.
 
 **Public Interface**:
 ```python

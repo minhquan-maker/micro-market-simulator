@@ -1,4 +1,4 @@
-# Phase 2 — Specification: Mini Jane Street Simulator
+# Specification: Mini Jane Street Simulator
 
 ## 1. Product Goals
 
@@ -178,8 +178,7 @@
 2. **No external C dependencies** — All dependencies must be pure Python or well-established wheels (sortedcontainers).
 3. **Single-threaded** — No threading or multiprocessing. Event-driven loop only.
 4. **No database** — All state is in-memory. Export via JSON.
-5. **No web framework** — CLI output only. No REST/WebSocket APIs.
-6. **No real market data** — Fully synthetic simulation.
+5. **No real market data** — Fully synthetic simulation.
 
 ---
 

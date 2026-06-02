@@ -50,7 +50,9 @@ export function useSimulation({ onTick, onComplete }: UseSimulationOptions = {})
         ws.onmessage = (event) => {
           const msg: WsMessage = JSON.parse(event.data);
 
-          if (msg.type === "tick") {
+          if (msg.type === "start") {
+            // Initial snapshot received; simulation is about to begin
+          } else if (msg.type === "tick") {
             onTick?.(msg);
           } else if (msg.type === "complete") {
             onComplete?.({

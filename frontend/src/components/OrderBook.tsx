@@ -10,7 +10,7 @@ export default function OrderBook({ tick }: Props) {
   const maxBidQty = Math.max(...bid_depth.map(([, q]) => q), 1);
   const maxAskQty = Math.max(...ask_depth.map(([, q]) => q), 1);
 
-  const spread = best_ask > 0 && best_bid > 0 ? best_ask - best_bid : null;
+  const spread = best_ask > 0 && best_bid > 0 ? Math.max(0, best_ask - best_bid) : null;
 
   return (
     <div className="order-book-content">

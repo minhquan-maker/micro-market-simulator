@@ -130,10 +130,6 @@ class Exchange:
             self._open_orders[order_id] = rest_order
             # NOTE: OrderBook.rest_order was already called by _match_limit_order
             # for unfilled limit orders. Do NOT call it again here.
-        else:
-            # Fully filled: remove from per-trader registry since order is not in _open_orders
-            self._trader_order_ids.get(trader_id, set()).discard(order_id)
-
         # Determine status
         if remaining == quantity:
             # No fills at all

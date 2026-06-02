@@ -1,4 +1,4 @@
-# Phase 4 — Roadmap: Mini Jane Street Simulator
+# Roadmap: Mini Jane Street Simulator
 
 ## Project Overview
 

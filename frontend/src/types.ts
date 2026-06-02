@@ -47,6 +47,7 @@ export interface Trade {
   quantity: number;
   side: "BUY" | "SELL";
   counterparty: string;
+  timestamp?: number;
 }
 
 export interface TraderPnL {

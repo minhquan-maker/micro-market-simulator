@@ -3,10 +3,9 @@ import type { Trade } from "../types";
 
 interface Props {
   trades: Trade[];
-  latestTimestamp?: number;
 }
 
-export default function TradeTape({ trades, latestTimestamp }: Props) {
+export default function TradeTape({ trades }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const atBottomRef = useRef(true);
 
@@ -34,7 +33,7 @@ export default function TradeTape({ trades, latestTimestamp }: Props) {
           trades.slice(-100).map((trade, i) => (
             <div key={i} className="trade-row">
               <span className="trade-time">
-                {latestTimestamp !== undefined ? Math.floor(latestTimestamp) : ""}
+                {trade.timestamp !== undefined ? Math.floor(trade.timestamp) : ""}
               </span>
               <span className={`trade-price ${trade.side === "BUY" ? "buy" : "sell"}`}>
                 {trade.price.toFixed(2)}

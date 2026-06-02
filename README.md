@@ -2,7 +2,7 @@
 
 > An interactive market microstructure simulator — watch price form in real-time as 5 trading agents interact through a limit order book.
 
-[Live Demo](https://your-demo-url.com) · [Architecture](#architecture) · [Quick Start](#quick-start) · [5 Agents](#5-trading-agents) · [Concepts](#concepts-to-learn)
+[Live Demo](https://micro-market-simulator.vercel.app) · [Architecture](#architecture) · [Quick Start](#quick-start) · [5 Agents](#5-trading-agents) · [Concepts](#concepts-to-learn)
 
 ---
 
@@ -10,7 +10,7 @@
 
 **Mini Jane Street Simulator** mô phỏng **cấu trúc vi mô thị trường** (market microstructure) — cách giá hình thành khi các lệnh mua/bán tương tác với nhau theo quy tắc **ưu tiên giá-thời gian (FIFO)**.
 
-Nói đơn giản: thay vì một "black box" giá, bạn thấy trực tiếp **order book**, **matching engine**, và **5 trading agents** đang chiến đấu với nhau tick-by-tick.
+Nói đơn giản: thay vì một "black box" giá, bạn thấy trực tiếp **order book**, **matching engine**, và **5 trading agents** đang tương tác với nhau tick-by-tick.
 
 ## What you'll see
 

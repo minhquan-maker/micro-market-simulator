@@ -169,3 +169,6 @@ class MarketMaker:
             pnl = (fill.price - self._avg_cost) * fill.quantity
             self._realized_pnl += pnl
             self._stats.gross_spread_earned += pnl
+
+            if self._position == 0:
+                self._avg_cost = Decimal("0")

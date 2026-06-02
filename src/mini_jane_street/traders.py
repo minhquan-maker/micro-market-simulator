@@ -63,6 +63,9 @@ class Trader(ABC):
             pnl = (fill.price - self._avg_cost) * Decimal(fill.quantity)
             self._stats.realized_pnl += pnl
 
+            if self.position == 0:
+                self._avg_cost = Decimal("0")
+
     def compute_pnl(self, current_mid: Decimal) -> tuple[Decimal, Decimal]:
         """Return (realized_pnl, unrealized_pnl) given current mid price."""
         unrealized = Decimal(self.position) * (current_mid - self._avg_cost)
