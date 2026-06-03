@@ -89,7 +89,7 @@ export default function ContactSection() {
                   <ExternalLink size={11} strokeWidth={2} className="text-gray-400 ml-auto" />
                 </a>
                 <a
-                  href="https://github.com/nguyenminhquan-maker"
+                  href="https://github.com/minhquan-maker"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 text-[13px] sm:text-[14px] font-medium text-gray-700 hover:text-gray-900 transition-colors group"
@@ -122,7 +122,7 @@ export default function ContactSection() {
                 The full source is open. Explore the simulation engine, matching logic, and agent strategies.
               </p>
               <a
-                href="https://github.com/nguyenminhquan-maker/micro-market-simulator"
+                href="https://github.com/minhquan-maker/micro-market-simulator"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-white text-gray-900 text-[12px] sm:text-[13px] font-semibold rounded-full px-4 py-2 hover:bg-gray-100 transition-colors"

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import { useSimulation } from "../hooks/useSimulation";
 import { useTheme } from "../contexts/ThemeContext";
 import OrderBook from "../components/OrderBook";
@@ -44,27 +45,8 @@ type CompleteResult = {
   analytics: Record<string, AnalyticsMetrics>;
 };
 
-function buildCSV(trades: Trade[]): string {
-  const header = "timestamp,side,price,quantity,counterparty\n";
-  const rows = trades.map((t) =>
-    `${t.timestamp ?? 0},${t.side},${t.price},${t.quantity},${t.counterparty}`
-  ).join("\n");
-  return header + rows;
-}
-
-function downloadBlob(content: string, filename: string, type: string) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export default function SimulationApp() {
   const { theme, toggleTheme } = useTheme();
-
   const [config, setConfig] = useState<SimConfig>({
     num_ticks: 200,
     volatility: 0.5,
@@ -161,7 +143,7 @@ export default function SimulationApp() {
     setAnalytics(result.analytics);
   }, []);
 
-  const { status, error, start, stop, step, runId } = useSimulation({
+  const { status, error, start, stop, step } = useSimulation({
     onTick: handleTick,
     onComplete: handleComplete,
   });
@@ -183,24 +165,6 @@ export default function SimulationApp() {
     setLivePositions({});
     setAnalytics({});
     start(config);
-  };
-
-  const exportCSV = () => {
-    if (!allTrades.length) return;
-    downloadBlob(buildCSV(allTrades), `sim-${runId ?? "run"}-trades.csv`, "text/csv");
-  };
-
-  const exportJSON = () => {
-    const report = {
-      run_id: runId,
-      config,
-      final_price: finalPrice,
-      total_trades: totalTrades,
-      mm: mmResult,
-      traders: traderPnL,
-      analytics,
-    };
-    downloadBlob(JSON.stringify(report, null, 2), `sim-${runId ?? "run"}-report.json`, "application/json");
   };
 
   const currentPrice = finalPrice ?? latestTick?.price ?? config.initial_price;
@@ -300,60 +264,66 @@ export default function SimulationApp() {
       )}
 
       <div className="main">
-        <div className="panel order-book">
-          <div className="panel-header">
-            <span className="panel-title">Order Book</span>
-            <span className="panel-badge">
-              {latestTick ? `${(latestTick.best_bid_qty + latestTick.best_ask_qty)} levels` : "—"}
-            </span>
-          </div>
-          {latestTick ? (
-            <OrderBook tick={latestTick} spreadHistory={spreadHistory} />
-          ) : (
-            <div className="empty-state">
-              <div className="empty-state-icon">📊</div>
-              <div className="empty-state-text">
-                Start a simulation to see<br />the order book
-              </div>
+        <Group orientation="horizontal" id="main-panels">
+          <Panel className="panel order-book" defaultSize={20} minSize={15}>
+            <div className="panel-header">
+              <span className="panel-title">Order Book</span>
+              <span className="panel-badge">
+                {latestTick ? `${(latestTick.best_bid_qty + latestTick.best_ask_qty)} levels` : "—"}
+              </span>
             </div>
-          )}
-        </div>
+            {latestTick ? (
+              <OrderBook tick={latestTick} spreadHistory={spreadHistory} />
+            ) : (
+              <div className="empty-state">
+                <div className="empty-state-icon">📊</div>
+                <div className="empty-state-text">
+                  Start a simulation to see<br />the order book
+                </div>
+              </div>
+            )}
+          </Panel>
 
-        <div className="panel chart-panel">
-          <div className="panel-header">
-            <span className="panel-title">Price History</span>
-            <span className="panel-badge">{priceHistory.length} pts</span>
-          </div>
-          <div className="chart-container">
-            <PriceChart data={priceHistory} initialPrice={config.initial_price} />
-          </div>
-        </div>
+          <Separator className="panel-separator" />
 
-        <div className="panel sidebar">
-          <div className="panel-header">
-            <span className="panel-title">Control</span>
-          </div>
-          <ConfigPanel
-            config={config}
-            setConfig={setConfig}
-            status={status}
-            onStart={handleStart}
-            onStop={stop}
-            error={error}
-            onStep={step}
-          />
-          {status === "running" && (
-            <EducationalSidebar
+          <Panel className="panel chart-panel" defaultSize={50} minSize={30}>
+            <div className="panel-header">
+              <span className="panel-title">Price History</span>
+              <span className="panel-badge">{priceHistory.length} pts</span>
+            </div>
+            <div className="chart-container">
+              <PriceChart data={priceHistory} initialPrice={config.initial_price} />
+            </div>
+          </Panel>
+
+          <Separator className="panel-separator" />
+
+          <Panel className="panel sidebar" defaultSize={30} minSize={20}>
+            <div className="panel-header">
+              <span className="panel-title">Control</span>
+            </div>
+            <ConfigPanel
+              config={config}
+              setConfig={setConfig}
+              status={status}
+              onStart={handleStart}
+              onStop={stop}
+              error={error}
+              onStep={step}
+            />
+            {status === "running" && (
+              <EducationalSidebar
+                tick={latestTick}
+                priceHistory={priceHistory}
+              />
+            )}
+            <AiAnalyst
               tick={latestTick}
               priceHistory={priceHistory}
+              traderPnL={traderPnL}
             />
-          )}
-          <AiAnalyst
-            tick={latestTick}
-            priceHistory={priceHistory}
-            traderPnL={traderPnL}
-          />
-        </div>
+          </Panel>
+        </Group>
 
         <div className="ticker">
           <div className="ticker-item">
@@ -399,32 +369,20 @@ export default function SimulationApp() {
         </div>
       </div>
 
-      <div className="bottom-row">
-        <div className="bottom-pnl-panel">
+      <Group orientation="horizontal" id="bottom-panels">
+        <Panel className="bottom-pnl-panel" defaultSize={35} minSize={20}>
           <PnLDashboard
             mmResult={mmResult}
             traderPnL={traderPnL}
             livePositions={livePositions}
             analytics={status === "complete" ? analytics : undefined}
           />
-        </div>
-        <div className="bottom-tape-panel">
+        </Panel>
+        <Separator className="panel-separator" />
+        <Panel className="bottom-tape-panel" defaultSize={65} minSize={30}>
           <TradeTape trades={allTrades} />
-        </div>
-        <div className="bottom-spacer-panel">
-          {status === "complete" && (
-            <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-              <div className="panel-title" style={{ marginBottom: 4 }}>Export</div>
-              <button className="btn btn-secondary" style={{ width: "100%" }} onClick={exportCSV}>
-                Export CSV
-              </button>
-              <button className="btn btn-secondary" style={{ width: "100%" }} onClick={exportJSON}>
-                Export JSON
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+        </Panel>
+      </Group>
     </div>
   );
 }

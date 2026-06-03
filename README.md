@@ -245,7 +245,7 @@ python3 -m pytest tests/ --cov=mini_jane_street --cov-report=term-missing
 ruff check src/ tests/ scripts/
 ```
 
-- **98 tests** across orderbook, matching engine, exchange, traders, market maker, simulation, analytics
+- **108 tests** across orderbook, matching engine, exchange, traders, market maker, simulation, analytics, API
 - **86% code coverage**
 
 ---

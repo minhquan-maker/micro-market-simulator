@@ -9,7 +9,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/simulate" element={<SimulationApp />} />
+          <Route path="/simulate/:type" element={<SimulationApp />} />
+          <Route path="/simulate" element={<Navigate to="/simulate/microstructure" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

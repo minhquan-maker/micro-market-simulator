@@ -3,6 +3,7 @@ import HeroSection from "../components/landing/HeroSection";
 import AboutSection from "../components/landing/AboutSection";
 import HowItWorksSection from "../components/landing/HowItWorksSection";
 import AgentsSection from "../components/landing/AgentsSection";
+import SimulatorSelector from "../components/landing/SimulatorSelector";
 import CtaSection from "../components/landing/CtaSection";
 import ContactSection from "../components/landing/ContactSection";
 
@@ -11,6 +12,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#EFEFEF]">
       <Nav />
       <HeroSection />
+      <SimulatorSelector />
       <AboutSection />
       <HowItWorksSection />
       <AgentsSection />
@@ -22,7 +24,7 @@ export default function LandingPage() {
             <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-[8px] tracking-tight">MM</span>
             </div>
-            <span className="text-[11px] sm:text-[12px] text-white/30">Mini Market Simulator</span>
+            <span className="text-[11px] sm:text-[12px] text-white/30">Market Lab</span>
           </div>
           <p className="text-[11px] sm:text-[12px] text-white/20">
             Market data is simulated. For educational purposes only.
