@@ -5,7 +5,7 @@ import LondonClock from "./LondonClock";
 import TextRollButton from "./TextRollButton";
 
 const NAV_LINKS = [
-  { label: "Simulations", href: "#simulations" },
+  { label: "Simulations", href: "/simulations" },
   { label: "About", href: "#about" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Agents", href: "#agents" },

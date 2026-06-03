@@ -1,32 +1,43 @@
-# Mini Jane Street Simulator
+# Mini Market — Financial Market Education Platform
 
-> An interactive market microstructure simulator — watch price form in real-time as 5 trading agents interact through a limit order book.
+> An interactive market microstructure simulator — learn how prices form in real-time through simulation, not speculation.
 
-[Live Demo](https://micro-market-simulator.vercel.app) · [Landing Page](#landing-page) · [Quick Start](#quick-start) · [5 Agents](#5-trading-agents) · [Architecture](#architecture) · [Concepts](#concepts-to-learn)
+[Live Demo](https://mini-market.vercel.app) · [Documentation](#quick-start) · [Architecture](#architecture) · [4 Simulation Modules](#simulation-modules)
 
 ---
 
 ## What is this?
 
-**Mini Market Simulator** is an educational platform for understanding **market microstructure** — how prices form when buy and sell orders interact through a **limit order book** with FIFO (price-time) priority.
+**Mini Market** is an educational platform for understanding **how financial markets work**. Rather than treating price as a black box, you explore market microstructure through interactive simulations — watching the order book, the matching engine, and five trading agents compete tick-by-tick.
 
-Rather than treating price as a black box, you see directly: the order book, the matching engine, and five trading agents competing tick-by-tick.
+The platform opens with a hero section and four simulation modules. Each module is a complete learning experience: read about the concept, see visual illustrations, then enter the live simulation.
 
-The platform opens with a professional landing page introducing market microstructure concepts and the five agents. The simulation itself runs at `/simulate` (or the "Launch Simulator" button on the landing page).
+## 4 Simulation Modules
 
-## What you'll see
+| Module | Route | Focus |
+|--------|-------|-------|
+| **Market Microstructure** | `/simulations/microstructure` | How orders become trades and trades become prices |
+| **Order Book Dynamics** | `/simulations/orderbook` | FIFO matching, queue priority, depth visualization |
+| **Market Making** | `/simulations/marketmaking` | Spread capture vs inventory risk and adverse selection |
+| **Volatility Explorer** | `/simulations/volatility` | How volatility regimes change market behavior |
+
+Each module page includes: concept explanation, key terms, visual illustrations, learning outcomes, and an "Enter Simulation" CTA.
+
+---
+
+## What you'll see in the simulation
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Price Chart (random walk)           │  Order Book          │
-│                                     │  Bid      Ask         │
-│         $100.45 ──────────────────── │  100.44   100.46     │
-│       ╱                             │  100.43   100.47     │
-│   ╱──                               │  100.42   100.48     │
-│ ─                                   │                      │
+│  Price Chart (random walk)           │  Order Book            │
+│                                     │  Bid        Ask        │
+│         $100.45 ──────────────────── │  100.44     100.46     │
+│       ╱                             │  100.43     100.47     │
+│   ╱──                               │  100.42     100.48     │
+│ ─                                   │                       │
 ├──────────────────────────────────────┴──────────────────────┤
 │  Trade Tape  │  RT-1 bought  50 @ 100.44  │  MM PnL: +$12.50 │
-│              │  MOM-1 sold   30 @ 100.46  │  Sharpe: 1.82     │
+│              │  MOM-1 sold   30 @ 100.46   │  Sharpe: 1.82     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -40,19 +51,6 @@ The platform opens with a professional landing page introducing market microstru
 | `rt-1` / `rt-2` | Random Taker — random buy/sell orders | Create random liquidity |
 | `mom-1` | Momentum Trader — buys when price rises, sells when it falls | Follow the trend |
 | `mr-1` | Mean Reversion — buys below average, sells above average | Revert to the mean |
-
----
-
-## Concepts to Learn
-
-By watching the simulation, you'll understand:
-
-- **Bid/ask spread** — why it always exists (market maker needs compensation)
-- **Market maker economics** — earning the spread while managing adverse selection
-- **Momentum vs Mean Reversion** — momentum wins in trending markets, loses in sideways
-- **Adverse selection** — market maker gets "picked off" when price moves against them
-- **Partial fills** — large orders consume multiple price levels
-- **Price-time priority (FIFO)** — first order at the best price gets filled first
 
 ---
 
@@ -109,12 +107,94 @@ uvicorn main:app --reload --port 8000
 cd frontend && npm install && npm run dev
 ```
 
-Open `http://localhost:5173` — you land on the introduction page. Click **"Launch Simulator"** to start the simulation, or go directly to `http://localhost:5173/simulate`. Configure ticks, volatility, seed, and watch the simulation stream live over WebSocket.
+Open `http://localhost:5173` — land on the homepage, choose a simulation module. Click **"Learn More"** to read about the concept, then **"Enter Simulation"** to run the live market.
 
-### Deploy (Vercel + Render)
+### Run Tests
+
+```bash
+PYTHONPATH=src python3 -m pytest tests/ -v      # All tests
+PYTHONPATH=src python3 -m pytest tests/ -q      # Quick run
+```
+
+---
+
+## Architecture
+
+```
+SimulationEngine
+  ├─ Clock (virtual tick counter)
+  ├─ MarketDataGenerator (arithmetic random walk → latent mid price)
+  ├─ Exchange
+  │    ├─ OrderBook → PriceLevel[deque] (SortedDict ascending)
+  │    ├─ _open_orders (pruned after each add_order)
+  │    └─ _trader_order_ids (persistent — accumulates all submitted IDs)
+  ├─ traders[] (RandomTaker×2, MomentumTrader, MeanReversionTrader)
+  ├─ market_maker (MarketMaker — inventory-adjusted quotes)
+  └─ analytics (read-only consumer of fill log)
+```
+
+### Per-Tick Step Order
+
+1. `Clock.advance()` — tick increments
+2. `MarketDataGenerator.step()` — random walk price update
+3. `Exchange.update_mid_price()` — sync latent price
+4. `MarketMaker.on_market_data()` — MM posts quotes
+5. `Trader.on_market_data()` — each bot decides
+6. Fill routing — Exchange emits trades → routed to agents
+
+### Key Design Decisions
+
+- **`Decimal` everywhere** for prices. `PRICE_PRECISION = Decimal("0.01")` in `entities.py` is the single tick-size constant.
+- **Frozen dataclasses** for `Order`, `Fill`, `MarketData`; mutable for `Exchange`, `OrderBook`, `SimulationEngine`.
+- **`SortedDict` ascending** for both bid and ask. Best bid = `next(reversed(bid_book))`, best ask = `next(iter(ask_book))`.
+- **OrderBook owns matching** — `add_order()` returns fills directly.
+- **`SimulationConfig` extracted to `config.py`** — breaks circular imports between `analytics` and `simulation`.
+
+### Frontend Routes
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/` | `LandingPage` | WebGL shader hero + 4 simulation cards |
+| `/simulations` | `SimulationsIndex` | Redirects to `/simulations/microstructure` |
+| `/simulations/:type` | `ModulePage` | Learning module info page (microstructure/orderbook/marketmaking/volatility) |
+| `/simulate/:type` | `SimulationApp` | Full simulation dashboard (resizable panels, WebSocket) |
+
+### Package Layout
+
+`mini_jane_street` lives in two places:
+- `src/mini_jane_street/` — local dev (via `PYTHONPATH=src`)
+- `server/mini_jane_street/` — Render deployment
+
+Sync after editing:
+```bash
+cp -r src/mini_jane_street/ server/mini_jane_street/
+```
+
+### API & WebSocket
+
+```bash
+POST /api/simulate         { config }              → { run_id }
+GET  /api/simulate/{run_id}                        → { status, result }
+DELETE /api/simulate/{run_id}                      → cancels simulation
+POST /api/simulate/{run_id}/step                   → one tick (step mode)
+POST /api/simulate/{run_id}/speed  { delay_ms }   → update tick delay
+POST /api/ai/analyze  { prompt }                  → Groq LLM analysis (server-side key)
+WS   /ws/simulate/{run_id}                        → streams ticks
+```
+
+| WS Type | Direction | Description |
+|---------|-----------|-------------|
+| `start` | server→client | Config snapshot on connect |
+| `tick` | server→client | Order book depth, price, trades, per-agent positions |
+| `complete` | server→client | Final analytics (TraderPnL[], AnalyticsMetrics) |
+| `error` | server→client | Simulation error |
+
+---
+
+## Deploy (Vercel + Render)
 
 **Render (backend):**
-1. Create account at [render.com](https://render.com) — sign up with GitHub (no credit card)
+1. Create account at [render.com](https://render.com) — sign up with GitHub
 2. New → Web Service → connect `micro-market-simulator`
 3. Settings:
    - **Root Directory**: `server`
@@ -123,138 +203,29 @@ Open `http://localhost:5173` — you land on the introduction page. Click **"Lau
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
    - **Plan**: Free
-4. Click **Create Web Service** → wait ~2 min → copy the URL (e.g. `micro-market-backend.onrender.com`)
+4. Add environment variable: `GROQ_API_KEY` (get from [console.groq.com](https://console.groq.com))
+5. Click **Create Web Service** → wait ~2 min → copy the URL
 
 **Vercel (frontend):**
 1. Create account at [vercel.com](https://vercel.com) — sign up with GitHub
 2. Add New Project → select `micro-market-simulator`
 3. Root Directory: `frontend` | Build Command: `npm run build` | Output: `dist`
 4. Deploy → Settings → Environment Variables → add `VITE_API_URL = https://YOUR-RENDER-URL.onrender.com`
-5. Redeploy → live at `https://micro-market-simulator.vercel.app`
+5. Redeploy → live at `https://mini-market.vercel.app`
+
+Pushes to `main` auto-trigger both deployments.
 
 ---
 
-## Architecture
+## Concepts to Learn
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     SimulationEngine                        │
-│  ┌──────────┐  ┌──────────────────┐  ┌──────────────────┐  │
-│  │  Clock   │  │ MarketDataGenerator │  │    Exchange      │  │
-│  │(tick gen)│  │ (random walk)    │  │ (central router) │  │
-│  └──────────┘  └──────────────────┘  └────────┬─────────┘  │
-│                                                │            │
-│                      ┌─────────────────────────┴────┐       │
-│                      │         OrderBook            │       │
-│                      │  bid: SortedDict[PriceLevel] │       │
-│                      │  ask: SortedDict[PriceLevel] │       │
-│                      │       PriceLevel = deque     │       │
-│                      └──────────────────────────────┘       │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                   MatchingEngine                      │  │
-│  │  Pure function: add_order(order, book) → fills[]     │  │
-│  │  FIFO price-time priority · partial fills            │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                     Traders                            │  │
-│  │  RandomTaker · MomentumTrader · MeanReversionTrader   │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                   MarketMaker                          │  │
-│  │  Posts bid @ mid - spread/2 · ask @ mid + spread/2     │  │
-│  │  Inventory skew adjusts quotes asymmetrically          │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                    Analytics                           │  │
-│  │  Sharpe ratio · max drawdown · win rate · profit factor│  │
-│  │  CSV/JSON export                                      │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
+By watching the simulation, you'll understand:
 
-### File Map
-
-| File | Responsibility |
-|------|---------------|
-| `entities.py` | Frozen dataclasses: `Order`, `Fill`, `MarketData`, `Side`, `OrderType` |
-| `orderbook.py` | Limit Order Book — SortedDict + deque per price level |
-| `matching_engine.py` | Pure FIFO matching — returns fills without mutating state |
-| `exchange.py` | Central coordinator — routes orders, records fills, exposes `mid_price` |
-| `simulation.py` | `Clock`, `MarketDataGenerator` (arithmetic random walk), `SimulationEngine` |
-| `traders.py` | `Trader` base + `RandomTaker`, `MomentumTrader`, `MeanReversionTrader` |
-| `market_maker.py` | Inventory-adjusted MM quoting, fill routing, realized PnL tracking |
-| `analytics.py` | Sharpe, max drawdown, win rate, profit factor — CSV/JSON export |
-| `config.py` | `SimulationConfig`, `SimulationResult` (breaks circular imports) |
-
-### Frontend Structure
-
-| Route | Component | Description |
-|-------|-----------|-------------|
-| `/` | `LandingPage` | Landing page: hero + about + 5 agents + CTA |
-| `/simulate` | `SimulationApp` | Full simulation dashboard |
-
-- **Landing page** — React 18 + Tailwind CSS v3.4, responsive, dark/light via CSS vars
-- **Simulation** — original app via vanilla CSS, WebSocket streaming, Recharts
-
----
-
-## WebSocket API
-
-```
-POST /api/simulate  { num_ticks, volatility, seed, initial_price }  → { run_id }
-GET  /api/simulate/{run_id}  → { status, result }
-WS   /ws/simulate/{run_id}   → streams tick messages
-```
-
-| Message | Direction | Content |
-|---------|-----------|---------|
-| `start` | server → client | Initial config snapshot on connect |
-| `tick` | server → client | Every tick — order book depth, price, trades |
-| `complete` | server → client | Final analytics results |
-| `error` | server → client | Error during simulation |
-
----
-
-## Design Decisions
-
-- **`Decimal` everywhere** — no float rounding in financial calculations
-- **Frozen dataclasses** — immutable `Order`, `Fill`, `MarketData` for thread safety
-- **SortedDict ascending** — best bid = `next(reversed(bid_book))`, best ask = `next(iter(ask_book))`
-- **MatchingEngine is pure** — same inputs → same fills; testable in isolation
-- **OrderBook owns matching** — `add_order()` returns fills directly; no separate state path
-
----
-
-## Testing
-
-```bash
-# All tests
-python3 -m pytest tests/ -v
-
-# Single file
-python3 -m pytest tests/test_orderbook.py -v
-
-# With coverage
-python3 -m pytest tests/ --cov=mini_jane_street --cov-report=term-missing
-
-# Lint
-ruff check src/ tests/ scripts/
-```
-
-- **108 tests** across orderbook, matching engine, exchange, traders, market maker, simulation, analytics, API
-- **86% code coverage**
-
----
-
-## Lessons Learned
-
-1. **Avoid duplicate mutable references** — storing orders in both `_open_orders` (dict) and `PriceLevel.orders` (deque) caused stale references on partial fills. Single source of truth: the deque.
-2. **Circular imports are a design smell** — `analytics` and `simulation` both imported `SimulationConfig`. Fix: extract to `config.py`.
-3. **`SortedDict` does not support `reverse=True`** — use ascending for both sides; best bid via `next(reversed())`.
-4. **Test the bug, not just the happy path** — a specific test caught "order rests but status is FILLED" that happy-path tests missed.
-5. **Partial fill requires explicit state reconstruction** — `popleft()` + reconstruct with updated `filled_qty` + `appendleft()` preserves FIFO priority.
-6. **`Decimal / int` not `Decimal / Decimal`** — mixed-type division avoids context precision issues.
+- **Bid/ask spread** — why it always exists (market maker needs compensation)
+- **FIFO matching** — first order at the best price gets filled first
+- **Market maker economics** — earning the spread while managing inventory risk
+- **Momentum vs Mean Reversion** — momentum wins in trending markets, loses in sideways
+- **Adverse selection** — market maker gets picked off when informed traders arrive
+- **Volatility regimes** — spreads widen when uncertainty increases
+- **Partial fills** — large orders consume multiple price levels
+- **Order book imbalance** — bid/ask depth ratio predicts short-term price direction

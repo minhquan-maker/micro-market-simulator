@@ -89,11 +89,11 @@ export default function SimulatorSelector() {
                 </div>
 
                 <Link
-                  to={`/simulate/${sim.id}`}
+                  to={`/simulations/${sim.id}`}
                   className="inline-flex items-center gap-2 text-sm font-semibold transition-colors group/link"
                   style={{ color: sim.color }}
                 >
-                  Start Simulation
+                  Learn More
                   <ArrowRight
                     size={16}
                     className="transition-transform group-hover/link:translate-x-1"

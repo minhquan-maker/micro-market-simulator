@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { Shader, Swirl, ChromaFlow, FlutedGlass, FilmGrain } from "shaders/react";
 import TextRollButton from "./TextRollButton";
 
 function PartnerBadge() {
@@ -24,38 +25,52 @@ function PartnerBadge() {
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col bg-[#EFEFEF] overflow-hidden">
-      {/* CSS Animated Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Base gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#EFEFEF] via-[#f5f5f5] to-[#e8e8e8]" />
-        {/* Animated orb 1 */}
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#F26522]/20 to-[#ff8c42]/10 blur-[120px] animate-[float_8s_ease-in-out_infinite]" />
-        {/* Animated orb 2 */}
-        <div className="absolute top-1/3 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-[#F26522]/15 to-[#e05a1a]/5 blur-[100px] animate-[float_10s_ease-in-out_infinite_reverse]" />
-        {/* Animated orb 3 */}
-        <div className="absolute bottom-20 right-20 w-[400px] h-[400px] rounded-full bg-gradient-to-tl from-[#ff5f03]/10 to-transparent blur-[80px] animate-[float_12s_ease-in-out_infinite]" />
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              "linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-        {/* Noise texture */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
-        }} />
+    <section className="relative min-h-screen flex flex-col bg-white overflow-hidden">
+      {/* WebGL Shader Background */}
+      <div className="absolute inset-0 z-0">
+        <Shader className="w-full h-full" colorSpace="srgb">
+          <Swirl colorA="#ffffff" colorB="#f0f0f0" detail={1.7} />
+          <ChromaFlow
+            baseColor="#ffffff"
+            downColor="#ff5f03"
+            leftColor="#ff5f03"
+            rightColor="#ff5f03"
+            upColor="#ff5f03"
+            momentum={13}
+            radius={3.5}
+          />
+          <FlutedGlass
+            aberration={0.61}
+            angle={31}
+            frequency={8}
+            highlight={0.12}
+            highlightSoftness={0}
+            lightAngle={-90}
+            refraction={4}
+            shape="rounded"
+            softness={1}
+            speed={0.15}
+          />
+          <FilmGrain strength={0.05} />
+        </Shader>
       </div>
+
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 z-[1] opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+      />
 
       {/* Hero Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-end max-w-[1440px] mx-auto w-full px-5 sm:px-8 lg:px-12 pb-14 sm:pb-16 lg:pb-20">
         <div className="max-w-4xl">
           {/* Label */}
           <p className="text-[13px] sm:text-[14px] text-gray-900 tracking-wide mb-5 sm:mb-8 font-medium">
-            Mini Market Simulator
+            Mini Market
           </p>
 
           {/* Headline */}

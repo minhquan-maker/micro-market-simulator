@@ -14,7 +14,8 @@
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^4.11.2",
     "react-router-dom": "^7.1.0",
-    "recharts": "^2.12.7"
+    "recharts": "^2.12.7",
+    "shaders": "^2.5.129"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
