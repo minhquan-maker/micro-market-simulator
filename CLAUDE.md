@@ -115,20 +115,61 @@ WS   /ws/simulate/{run_id}                        → streams ticks
 
 ## Frontend
 
-- **Landing page** (`/`): Tailwind CSS v3.4, responsive, dark/light via CSS vars
-- **Simulation app** (`/simulate`): vanilla CSS + CSS custom properties
-- **Do NOT use Tailwind classes in simulation components** (ConfigPanel, OrderBook, PriceChart, etc.)
+### Routing & Pages
+
+| Route | File | Description |
+|-------|------|-------------|
+| `/` | `LandingPage.tsx` | Landing page with hero, agents, CTA |
+| `/simulate` | `SimulationApp.tsx` | Full simulation dashboard |
+
+### Simulation Components (`frontend/src/components/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `ConfigPanel` | Tick/volatility/seed/difficulty controls |
+| `OrderBook` | Live bid/ask depth display |
+| `PriceChart` | Price chart with Recharts |
+| `TradeTape` | Rolling trade log |
+| `PnLDashboard` | Per-agent realized/unrealized PnL |
+| `EducationalSidebar` | Market microstructure context panel |
+| `AiAnalyst` | Calls `POST /api/ai/analyze` → Groq LLM commentary |
+| `ErrorBoundary` | React error boundary wrapping the dashboard |
+| `LondonClock` | Virtual simulation clock display |
+
+### Landing Sub-components (`frontend/src/components/landing/`)
+
+`HeroSection`, `AgentsSection`, `SimulatorSelector`, `HowItWorksSection`, `CtaSection`, `AboutSection`, `ContactSection`, `Nav`, `TextRollButton`
+
+### Styling
+
+- Landing page: Tailwind CSS v3.4, responsive, dark/light via CSS vars
+- Simulation app: **vanilla CSS + CSS custom properties only** — do NOT use Tailwind classes in simulation components
 - React 18 + TypeScript + Vite + Recharts + react-router-dom v7
-- `useSimulation.ts` hook handles WS + REST; uses ref-pattern to avoid stale closures
+
+### `useSimulation.ts` Hook
+
+Handles WebSocket + REST orchestration. Key patterns:
+- **Ref pattern** for callbacks: `onTickRef = useRef(onTick)` updated via `useEffect` — prevents stale closures in async WS message handlers
+- WS auto-reconnects on close; `status` state: `idle | connecting | running | complete | error`
+- Step mode: client calls `POST /api/simulate/{run_id}/step` to advance one tick
+- Speed control: `POST /api/simulate/{run_id}/speed { delay_ms }` overrides tick delay
+
+### TypeScript Types (`frontend/src/types.ts`)
+
+Core WebSocket message types: `TickMsg`, `StartMsg`, `CompleteMsg`, `ErrorMsg`, `WsMessage`. `AgentPosition`, `Trade`, `TraderPnL`, `AnalyticsMetrics`, `SimConfig`.
 
 In dev: Vite proxy maps `/api` and `/ws` to `localhost:8000`. In production: `VITE_API_URL` env var points to Render.
 
 ## Server Files
 
 - `server/main.py` — FastAPI app (REST + WebSocket + AI proxy + root HTML serving)
-- `server/manager.py` — `SimulationManager` orchestrates async runs via `asyncio.Queue` → WebSocket
-- `server/models.py` — Pydantic-free dataclasses
-- `server/Dockerfile` — container image for deployment
+- `server/manager.py` — `SimulationManager` orchestrates async runs
+  - `_runs: Dict[str, SimulationRun]` — keyed by `run_id` (UUID prefix, e.g. `a1b2c3d4`)
+  - `_queues: Dict[str, asyncio.Queue]` — per-run tick message queues
+  - Step mode: `trigger_step(run_id)` sets `run.step_event` (`asyncio.Event`); worker loop does `await event.wait()` then clears
+  - Speed control: `set_speed()` updates `tick_delay_ms` on the live `SimulationRun`
+- `server/models.py` — Pydantic-free dataclasses: `SimulationRequest`, `SimulationRun`, `TickMessage`, `CompleteMessage`
+- `server/Dockerfile` — container image for Render deployment
 
 ## SimulationRequest
 
@@ -159,6 +200,25 @@ SimulationRequest(
 
 Pushes to `main` auto-trigger both deployments.
 
-## Additional Docs
+## Additional Docs & Outputs
 
-`docs/` has supplementary documentation: `architecture.md`, `spec.md`, `roadmap.md`, `research.md`, `idea_review.md`.
+`docs/` — supplementary documentation: `architecture.md`, `spec.md`, `roadmap.md`, `research.md`, `idea_review.md`
+
+`notebooks/` — `analysis.ipynb` for Jupyter-based simulation analysis
+
+`outputs/` — CLI simulation outputs: `report.json`, `trades.csv`, `config.json` (written by `scripts/run_simulation.py`)
+
+## Test File Map
+
+| File | What it tests |
+|------|---------------|
+| `test_orderbook.py` | `OrderBook.add_order`, `cancel_order`, `get_depth`, `get_spread` |
+| `test_matching_engine.py` | `MatchingEngine` pure FIFO matching, price-time priority |
+| `test_matching_engine_integration.py` | end-to-end matching with partial fills |
+| `test_exchange.py` | `Exchange` routing, fill logging, `update_mid_price` |
+| `test_traders.py` | `RandomTaker`, `MomentumTrader`, `MeanReversionTrader` |
+| `test_market_maker.py` | MM quoting, inventory skew, fill routing |
+| `test_simulation.py` | `SimulationEngine` full runs, tick sequencing |
+| `test_analytics.py` | Sharpe ratio, max drawdown, win rate, profit factor |
+| `test_api.py` | FastAPI REST + WebSocket endpoints |
+| `conftest.py` | Shared fixtures: `sample_order`, `empty_book`, `exchange`, `mm` |

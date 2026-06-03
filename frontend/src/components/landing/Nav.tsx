@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
 import LondonClock from "./LondonClock";
 import TextRollButton from "./TextRollButton";
@@ -57,15 +58,15 @@ export default function Nav() {
               </span>
               <LondonClock />
             </div>
-            <button
-              onClick={() => handleNavClick("#simulations")}
+            <Link
+              to="/simulate/microstructure"
               className="hidden md:flex items-center gap-2 bg-gray-900 text-white text-[13px] font-medium rounded-full pl-4 sm:pl-5 pr-2 py-1.5 sm:py-2 group"
             >
               <TextRollButton>Launch Simulator</TextRollButton>
               <div className="w-6 h-6 rounded-full bg-white/10 group-hover:rotate-[-45deg] transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] flex items-center justify-center flex-shrink-0">
                 <ArrowRight size={12} strokeWidth={2.5} className="text-white" />
               </div>
-            </button>
+            </Link>
 
             {/* Mobile menu toggle */}
             <button
@@ -106,13 +107,14 @@ export default function Nav() {
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => { handleNavClick("#simulations"); setMenuOpen(false); }}
+            <Link
+              to="/simulate/microstructure"
+              onClick={() => setMenuOpen(false)}
               className="flex items-center justify-between bg-[#F26522] text-white text-[15px] font-semibold rounded-full px-5 py-3 w-full"
             >
               <TextRollButton>Launch Simulator</TextRollButton>
               <ArrowRight size={16} strokeWidth={2.5} />
-            </button>
+            </Link>
           </div>
         </div>
       )}

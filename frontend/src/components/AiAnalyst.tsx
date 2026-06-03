@@ -7,11 +7,20 @@ interface Props {
   tick: TickMsg | null;
   priceHistory: PricePoint[];
   traderPnL: { id: string; realized: number }[];
+  simType?: string;
 }
 
-function buildPrompt(tick: TickMsg | null, priceHistory: PricePoint[], traderPnL: { id: string; realized: number }[]): string {
+const TYPE_CONTEXT: Record<string, string> = {
+  microstructure: "Focus on overall market dynamics, price discovery, and the interaction between trading agents.",
+  orderbook: "Focus on order book mechanics: queue position, depth, FIFO matching, and how orders queue at each price level.",
+  marketmaking: "Focus on the market maker's perspective: spread capture, inventory management, and adverse selection risk.",
+  volatility: "Focus on volatility dynamics: how uncertainty affects spreads, order flow, and agent behavior.",
+};
+
+function buildPrompt(tick: TickMsg | null, priceHistory: PricePoint[], traderPnL: { id: string; realized: number }[], simType: string): string {
   if (!tick) {
-    return "The simulation has not started yet. Explain what a user should expect to see in a market microstructure simulation.";
+    const context = TYPE_CONTEXT[simType] ?? TYPE_CONTEXT.microstructure;
+    return `The simulation has not started yet. Explain what a user should expect to see in this simulation. ${context}`;
   }
 
   const spread = tick.best_ask > 0 && tick.best_bid > 0
@@ -28,7 +37,11 @@ function buildPrompt(tick: TickMsg | null, priceHistory: PricePoint[], traderPnL
 
   const pnlSummary = traderPnL.map((t) => `${t.id}: realized PnL ${t.realized >= 0 ? "+" : ""}${t.realized.toFixed(3)}`).join("; ");
 
-  return `Market snapshot at tick ${tick.tick}:
+  const context = TYPE_CONTEXT[simType] ?? TYPE_CONTEXT.microstructure;
+
+  return `Analysis context: ${context}
+
+Market snapshot at tick ${tick.tick}:
 
 Price: ${tick.price.toFixed(2)} (${priceChange}% from start)
 Spread: ${spread}
@@ -44,7 +57,7 @@ Agent P&L: ${pnlSummary || "No data yet"}
 Please provide a brief analysis of the current market state and what is driving price behavior.`;
 }
 
-export default function AiAnalyst({ tick, priceHistory, traderPnL }: Props) {
+export default function AiAnalyst({ tick, priceHistory, traderPnL, simType = "microstructure" }: Props) {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +67,7 @@ export default function AiAnalyst({ tick, priceHistory, traderPnL }: Props) {
     setError(null);
     setAnalysis(null);
     try {
-      const prompt = buildPrompt(tick, priceHistory, traderPnL);
+      const prompt = buildPrompt(tick, priceHistory, traderPnL, simType);
       const result = await analyzeMarket({ prompt });
       setAnalysis(result);
     } catch (e) {

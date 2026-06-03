@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
+import { useParams } from "react-router-dom";
 import { useSimulation } from "../hooks/useSimulation";
 import { useTheme } from "../contexts/ThemeContext";
 import OrderBook from "../components/OrderBook";
@@ -10,6 +11,43 @@ import ConfigPanel from "../components/ConfigPanel";
 import EducationalSidebar from "../components/EducationalSidebar";
 import AiAnalyst from "../components/AiAnalyst";
 import type { TickMsg, PricePoint, TraderPnL, Trade, AgentPosition, AnalyticsMetrics } from "../types";
+
+const SIM_TYPES = {
+  microstructure: {
+    title: "Market Microstructure",
+    subtitle: "Watch 5 agents compete — price discovery, spreads, fills",
+    agents: ["mm-1", "rt-1", "rt-2", "mom-1", "mr-1"],
+    volatility: 0.5,
+    ticks: 200,
+    initialPrice: 100,
+  },
+  orderbook: {
+    title: "Order Book Dynamics",
+    subtitle: "Explore queue, FIFO matching, and price levels",
+    agents: ["mm-1", "rt-1", "rt-2"],
+    volatility: 0.3,
+    ticks: 300,
+    initialPrice: 100,
+  },
+  marketmaking: {
+    title: "Market Making",
+    subtitle: "Spread capture vs inventory risk — focus on the MM",
+    agents: ["mm-1", "rt-1", "mom-1"],
+    volatility: 0.4,
+    ticks: 200,
+    initialPrice: 100,
+  },
+  volatility: {
+    title: "Volatility Explorer",
+    subtitle: "High volatility regimes — see spreads widen and agents adapt",
+    agents: ["mm-1", "rt-1", "rt-2", "mom-1", "mr-1"],
+    volatility: 1.5,
+    ticks: 150,
+    initialPrice: 100,
+  },
+};
+
+const DEFAULT_TYPE = "microstructure";
 
 const AGENTS = [
   { id: "mm-1", label: "MM", color: "var(--blue)" },
@@ -46,15 +84,19 @@ type CompleteResult = {
 };
 
 export default function SimulationApp() {
+  const { type } = useParams<{ type: string }>();
+  const simType = (type as keyof typeof SIM_TYPES) ?? DEFAULT_TYPE;
+  const simConfig = SIM_TYPES[simType] ?? SIM_TYPES[DEFAULT_TYPE];
+
   const { theme, toggleTheme } = useTheme();
   const [config, setConfig] = useState<SimConfig>({
-    num_ticks: 200,
-    volatility: 0.5,
+    num_ticks: simConfig.ticks,
+    volatility: simConfig.volatility,
     seed: 42,
-    initial_price: 100.0,
-    tick_delay_ms: 10,
+    initial_price: simConfig.initialPrice,
+    tick_delay_ms: 50,
     step_mode: false,
-    enabled_agents: ["mm-1", "rt-1", "rt-2", "mom-1", "mr-1"],
+    enabled_agents: simConfig.agents,
   });
 
   const [latestTick, setLatestTick] = useState<TickMsg | null>(null);
@@ -263,6 +305,11 @@ export default function SimulationApp() {
         </div>
       )}
 
+      <div className="sim-type-header">
+        <span className="sim-type-title">{simConfig.title}</span>
+        <span className="sim-type-subtitle">{simConfig.subtitle}</span>
+      </div>
+
       <div className="main">
         <Group orientation="horizontal" id="main-panels">
           <Panel className="panel order-book" defaultSize={20} minSize={15}>
@@ -315,12 +362,14 @@ export default function SimulationApp() {
               <EducationalSidebar
                 tick={latestTick}
                 priceHistory={priceHistory}
+                simType={simType}
               />
             )}
             <AiAnalyst
               tick={latestTick}
               priceHistory={priceHistory}
               traderPnL={traderPnL}
+              simType={simType}
             />
           </Panel>
         </Group>

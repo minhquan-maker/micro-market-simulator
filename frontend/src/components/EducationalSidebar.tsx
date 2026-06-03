@@ -4,9 +4,10 @@ import type { TickMsg } from "../types";
 interface Props {
   tick: TickMsg | null;
   priceHistory: { price: number }[];
+  simType?: string;
 }
 
-function generateExplanation(tick: TickMsg | null, history: { price: number }[]): string[] {
+function generateExplanation(tick: TickMsg | null, history: { price: number }[], simType: string): string[] {
   const msgs: string[] = [];
 
   if (!tick) {
@@ -72,6 +73,57 @@ function generateExplanation(tick: TickMsg | null, history: { price: number }[])
     }
   }
 
+  // Type-specific messages
+  if (simType === "orderbook" && tick.bid_depth.length > 0 && tick.ask_depth.length > 0) {
+    const bestBidQty = tick.bid_depth[0]?.[1] ?? 0;
+    const bestAskQty = tick.ask_depth[0]?.[1] ?? 0;
+    const queueRatio = bestAskQty > 0 ? bestBidQty / bestAskQty : 1;
+    if (queueRatio > 2) {
+      msgs.push("Thick bid queue: many orders waiting at the best bid — strong support level. Ask side is thin.");
+    } else if (queueRatio < 0.5) {
+      msgs.push("Thick ask queue: many orders waiting at the best ask — strong resistance level. Bid side is thin.");
+    }
+    if (tick.bid_depth.length > 3 && tick.ask_depth.length > 3) {
+      msgs.push(`Deep book: ${tick.bid_depth.length} bid levels and ${tick.ask_depth.length} ask levels visible — significant liquidity on both sides.`);
+    }
+  }
+
+  if (simType === "marketmaking" && mmPos) {
+    const absPos = Math.abs(mmPos.position);
+    if (absPos > 50) {
+      msgs.push(mmPos.position > 0
+        ? "MM holding large long inventory — high inventory risk. May need to narrow bid to buy less."
+        : "MM holding large short inventory — high inventory risk. May need to narrow ask to sell less."
+      );
+    }
+    if (spread) {
+      const spreadNum = parseFloat(spread);
+      if (spreadNum > 0.05 && mmPos.position !== 0) {
+        msgs.push("Wide spread + non-zero MM inventory — compensating for adverse selection risk.");
+      }
+    }
+  }
+
+  if (simType === "volatility") {
+    if (history.length >= 10) {
+      const recentPrices = history.slice(-10).map((h) => h.price);
+      const returns = recentPrices.slice(1).map((p, i) => Math.abs((p - recentPrices[i]) / recentPrices[i]));
+      const avgReturn = returns.reduce((s, r) => s + r, 0) / returns.length;
+      const realizedVol = avgReturn * 100;
+      if (realizedVol > 0.5) {
+        msgs.push(`High realized volatility: ~${realizedVol.toFixed(2)}% avg tick move. Wide spreads expected — market makers charging more for uncertainty.`);
+      } else if (realizedVol < 0.1) {
+        msgs.push(`Low realized volatility: ~${realizedVol.toFixed(3)}% avg tick move. Quiet market — spreads should be tight.`);
+      }
+    }
+    if (spread) {
+      const spreadNum = parseFloat(spread);
+      if (spreadNum > 0.08) {
+        msgs.push("Volatility spike detected: spreads widening significantly as market makers price in uncertainty.");
+      }
+    }
+  }
+
   if (msgs.length === 0) {
     msgs.push("Market is quiet this tick. No significant price or volume signals.");
   }
@@ -79,8 +131,8 @@ function generateExplanation(tick: TickMsg | null, history: { price: number }[])
   return msgs;
 }
 
-export default function EducationalSidebar({ tick, priceHistory }: Props) {
-  const messages = generateExplanation(tick, priceHistory);
+export default function EducationalSidebar({ tick, priceHistory, simType = "microstructure" }: Props) {
+  const messages = generateExplanation(tick, priceHistory, simType);
 
   return (
     <div className="edu-sidebar-card">
